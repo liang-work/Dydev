@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/store_app.dart';
-import '../models/dashboard_stats.dart';
 import 'auth_service.dart';
 import 'logger_service.dart';
 
@@ -119,32 +118,4 @@ class ApiService {
     return data.map((j) => StoreApp.fromJson(j)).toList();
   }
 
-  /// Fetch store-wide statistics.
-  Future<DashboardStats> getStoreStats() async {
-    LoggerService.d(_tag, 'getStoreStats');
-    final response = await _dio.get(ApiConfig.storeStats);
-    return DashboardStats.fromJson(response.data);
-  }
-
-  /// Fetch featured / popular apps.
-  Future<List<StoreApp>> getFeaturedApps() async {
-    LoggerService.d(_tag, 'getFeaturedApps');
-    final response = await _dio.get(ApiConfig.storeFeatured);
-    final List<dynamic> data = response.data;
-    return data.map((j) => StoreApp.fromJson(j)).toList();
-  }
-
-  /// Fetch the most recent apps.
-  Future<List<StoreApp>> getRecentApps() async {
-    final response = await _dio.get(ApiConfig.storeRecent);
-    final List<dynamic> data = response.data;
-    return data.map((j) => StoreApp.fromJson(j)).toList();
-  }
-
-  /// Fetch the top / most-downloaded apps.
-  Future<List<StoreApp>> getTopApps() async {
-    final response = await _dio.get(ApiConfig.storeTop);
-    final List<dynamic> data = response.data;
-    return data.map((j) => StoreApp.fromJson(j)).toList();
-  }
 }

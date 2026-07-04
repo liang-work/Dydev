@@ -75,10 +75,8 @@ class DatabaseService {
             id INTEGER PRIMARY KEY DEFAULT 1,
             my_app_count INTEGER DEFAULT 0,
             total_downloads INTEGER DEFAULT 0,
-            review_count INTEGER DEFAULT 0,
-            platform_app_count INTEGER DEFAULT 0,
-            category_count INTEGER DEFAULT 0,
-            developer_count INTEGER DEFAULT 0
+            total_reviews INTEGER DEFAULT 0,
+            published_app_count INTEGER DEFAULT 0
           )
         ''');
       },

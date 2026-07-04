@@ -14,8 +14,4 @@ class ApiConfig {
   // ---- Store ----
   static const String storeApps = '/api/store/apps/';
   static const String storeMyApps = '/api/store/apps/my_apps/';
-  static const String storeStats = '/api/store/stats/';
-  static const String storeFeatured = '/api/store/featured/';
-  static const String storeRecent = '/api/store/recent/';
-  static const String storeTop = '/api/store/top/';
 }

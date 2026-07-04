@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// A shortcut action card displayed in the dashboard.
 class _QuickActionCard extends StatelessWidget {
@@ -86,14 +87,14 @@ class QuickActions extends StatelessWidget {
               icon: Icons.layers_outlined,
               label: '版本管理',
               description: '管理应用版本和更新',
-              onTap: () {},
+              onTap: () => context.go('/dashboard/versions'),
             ),
             const SizedBox(width: 12),
             _QuickActionCard(
               icon: Icons.person_outline,
               label: '个人设置',
               description: '修改个人资料和偏好',
-              onTap: () {},
+              onTap: () => context.go('/dashboard/settings'),
             ),
           ],
         ),

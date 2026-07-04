@@ -7,6 +7,15 @@ import 'pages/dashboard/dashboard_layout.dart';
 import 'pages/dashboard/dashboard_page.dart';
 import 'pages/settings/profile_page.dart';
 
+/// Shell route: wraps all authenticated pages inside the sidebar layout.
+class _DashboardShell extends StatelessWidget {
+  final Widget child;
+  const _DashboardShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) => DashboardLayout(child: child);
+}
+
 /// The root application widget.
 ///
 /// Sets up go_router with an auth redirect guard and a Material Design 3
@@ -19,8 +28,6 @@ class DevPlatformApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the auth provider so the entire widget (including the router)
-    // rebuilds whenever authentication state changes.
     final auth = context.watch<AuthProvider>();
 
     final router = GoRouter(
@@ -30,32 +37,24 @@ class DevPlatformApp extends StatelessWidget {
         final a = ctx.read<AuthProvider>();
         final isLoggedIn = a.isAuthenticated;
         final isLoginRoute = state.matchedLocation == '/login';
-
-        // Unauthenticated users are sent to /login.
         if (!isLoggedIn && !isLoginRoute) return '/login';
-        // Authenticated users on /login are sent to /dashboard.
         if (isLoggedIn && isLoginRoute) return '/dashboard';
         return null;
       },
       routes: [
-        GoRoute(
-          path: '/login',
-          name: 'login',
-          builder: (_, _) => const LoginPage(),
-        ),
+        GoRoute(path: '/login', name: 'login', builder: (_, _) => const LoginPage()),
         ShellRoute(
-          builder: (_, _, child) => DashboardLayout(child: child),
+          builder: (_, _, child) => _DashboardShell(child: child),
           routes: [
-            GoRoute(
-              path: '/dashboard',
-              name: 'dashboard',
-              builder: (_, _) => const DashboardPage(),
-            ),
-            GoRoute(
-              path: '/dashboard/settings',
-              name: 'settings',
-              builder: (_, _) => const ProfilePage(),
-            ),
+            GoRoute(path: '/dashboard', name: 'dashboard', builder: (_, _) => const DashboardPage()),
+            GoRoute(path: '/dashboard/notifications', name: 'notifications', builder: (_, _) => const _PlaceholderPage(title: '通知中心')),
+            GoRoute(path: '/dashboard/storages', name: 'storages', builder: (_, _) => const _PlaceholderPage(title: '存储管理')),
+            GoRoute(path: '/dashboard/softwares', name: 'softwares', builder: (_, _) => const _PlaceholderPage(title: '软件分发')),
+            GoRoute(path: '/dashboard/versions', name: 'versions', builder: (_, _) => const _PlaceholderPage(title: '版本管理')),
+            GoRoute(path: '/dashboard/announcements', name: 'announcements', builder: (_, _) => const _PlaceholderPage(title: '公告管理')),
+            GoRoute(path: '/dashboard/telemetry', name: 'telemetry', builder: (_, _) => const _PlaceholderPage(title: '软件遥测')),
+            GoRoute(path: '/dashboard/config', name: 'config', builder: (_, _) => const _PlaceholderPage(title: '云端配置')),
+            GoRoute(path: '/dashboard/settings', name: 'settings', builder: (_, _) => const ProfilePage()),
           ],
         ),
       ],
@@ -82,6 +81,28 @@ class DevPlatformApp extends StatelessWidget {
             side: BorderSide(color: Colors.grey.shade200),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A simple placeholder page for sidebar routes not yet implemented.
+class _PlaceholderPage extends StatelessWidget {
+  final String title;
+  const _PlaceholderPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.construction_outlined, size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text('正在开发中…', style: TextStyle(color: Colors.grey.shade500)),
+        ],
       ),
     );
   }
