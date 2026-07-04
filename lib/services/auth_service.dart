@@ -1,0 +1,46 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+/// Manages authentication tokens using secure device storage.
+///
+/// Tokens are stored in the platform keychain / encrypted storage
+/// and never written to plain-text SharedPreferences.
+class AuthService {
+  static const _accessTokenKey = 'access_token';
+  static const _refreshTokenKey = 'refresh_token';
+
+  final FlutterSecureStorage _storage;
+
+  AuthService({FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage();
+
+  /// Persist both access and refresh tokens.
+  Future<void> saveTokens(
+      {required String accessToken, String? refreshToken}) async {
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+    if (refreshToken != null) {
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    }
+  }
+
+  /// Retrieve the stored access token, or null.
+  Future<String?> getAccessToken() async {
+    return _storage.read(key: _accessTokenKey);
+  }
+
+  /// Retrieve the stored refresh token, or null.
+  Future<String?> getRefreshToken() async {
+    return _storage.read(key: _refreshTokenKey);
+  }
+
+  /// Check whether a stored access token exists (does NOT validate expiry).
+  Future<bool> hasToken() async {
+    final token = await _storage.read(key: _accessTokenKey);
+    return token != null && token.isNotEmpty;
+  }
+
+  /// Remove all stored tokens (used on logout).
+  Future<void> clearTokens() async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+}
