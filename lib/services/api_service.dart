@@ -2,13 +2,21 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/store_app.dart';
+import '../models/notification.dart';
+import '../models/software.dart';
+import '../models/version.dart';
+import '../models/channel.dart';
+import '../models/software_member.dart';
+import '../models/storage_backend.dart';
+import '../models/storage_file.dart';
+import '../models/announcement.dart';
+import '../models/telemetry_data.dart';
+import '../models/config_item.dart';
+import '../models/github_account.dart';
+import '../models/gitea_account.dart';
 import 'auth_service.dart';
 import 'logger_service.dart';
 
-/// Dio-based HTTP client for the Developer Platform API.
-///
-/// Automatically attaches the Bearer token on every request
-/// and attempts token refresh on 401 responses.
 class ApiService {
   static const _tag = 'ApiService';
 
@@ -25,26 +33,21 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
     ));
 
-    // Logging interceptor: trace every request / response.
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         LoggerService.d(_tag, '--> ${options.method} ${options.path}');
         handler.next(options);
       },
       onResponse: (response, handler) {
-        LoggerService.d(_tag,
-            '<-- ${response.statusCode} ${response.requestOptions.path}');
+        LoggerService.d(_tag, '<-- ${response.statusCode} ${response.requestOptions.path}');
         handler.next(response);
       },
       onError: (error, handler) {
-        LoggerService.e(_tag,
-            '<-- ERROR ${error.response?.statusCode} ${error.requestOptions.path}: ${error.message}',
-            error.error, error.stackTrace);
+        LoggerService.e(_tag, '<-- ERROR ${error.response?.statusCode} ${error.requestOptions.path}: ${error.message}', error.error, error.stackTrace);
         handler.next(error);
       },
     ));
 
-    // Auth interceptor: attach Bearer token + auto-refresh on 401.
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _authService.getAccessToken();
@@ -59,17 +62,13 @@ class ApiService {
           final refreshToken = await _authService.getRefreshToken();
           if (refreshToken != null) {
             try {
-              final refreshResponse = await Dio(
-                BaseOptions(baseUrl: ApiConfig.baseUrl),
-              ).post(
+              final refreshResponse = await Dio(BaseOptions(baseUrl: ApiConfig.baseUrl)).post(
                 ApiConfig.tokenRefresh,
                 data: {'refresh': refreshToken},
               );
-
               final newAccess = refreshResponse.data['access'] as String;
               LoggerService.i(_tag, 'Token refreshed successfully');
               await _authService.saveTokens(accessToken: newAccess);
-
               final retryOptions = error.requestOptions;
               retryOptions.headers['Authorization'] = 'Bearer $newAccess';
               final retryResponse = await _dio.fetch(retryOptions);
@@ -85,37 +84,414 @@ class ApiService {
   }
 
   // ---- Auth ----
-
-  /// Validate an access token by fetching the user profile.
-  /// Returns the [User] on success, throws on failure.
   Future<User> validateToken(String token) async {
-    LoggerService.i(_tag, 'Validating token ...');
     final response = await Dio(BaseOptions(baseUrl: ApiConfig.baseUrl)).get(
       ApiConfig.userMe,
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    final user = User.fromJson(response.data);
-    LoggerService.i(_tag, 'Token valid, user: ${user.username}');
-    return user;
+    return User.fromJson(response.data);
   }
 
-  // ---- User ----
-
-  /// Fetch the current user profile.
   Future<User> getUserProfile() async {
     final response = await _dio.get(ApiConfig.userMe);
     return User.fromJson(response.data);
   }
 
-  // ---- Store ----
-
-  /// Fetch the developer's own apps.
-  Future<List<StoreApp>> getMyApps() async {
-    LoggerService.d(_tag, 'getMyApps');
-    final response = await _dio.get(ApiConfig.storeMyApps);
-    final List<dynamic> data = response.data;
-    LoggerService.d(_tag, 'Fetched ${data.length} apps');
-    return data.map((j) => StoreApp.fromJson(j)).toList();
+  Future<User> updateProfile(Map<String, dynamic> data) async {
+    final response = await _dio.patch(ApiConfig.userProfile, data: data);
+    return User.fromJson(response.data);
   }
 
+  // ---- Store ----
+  Future<List<StoreApp>> getMyApps() async {
+    final response = await _dio.get(ApiConfig.storeMyApps);
+    return (response.data as List).map((j) => StoreApp.fromJson(j)).toList();
+  }
+
+  // ---- Notifications ----
+  Future<List<NotificationModel>> getNotifications() async {
+    final response = await _dio.get(ApiConfig.notifications);
+    return (response.data as List).map((j) => NotificationModel.fromJson(j)).toList();
+  }
+
+  Future<void> markNotificationRead(int id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.notifications, id, 'mark_read'));
+  }
+
+  Future<void> acceptInvitation(int id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.notifications, id, 'accept'));
+  }
+
+  Future<void> rejectInvitation(int id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.notifications, id, 'reject'));
+  }
+
+  // ---- Softwares ----
+  Future<List<Software>> getSoftwares() async {
+    final response = await _dio.get(ApiConfig.softwares);
+    return (response.data as List).map((j) => Software.fromJson(j)).toList();
+  }
+
+  Future<Software> getSoftware(String id) async {
+    final response = await _dio.get(ApiConfig.resourceUrl(ApiConfig.softwares, id));
+    return Software.fromJson(response.data);
+  }
+
+  Future<Software> createSoftware(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.softwares, data: data);
+    return Software.fromJson(response.data);
+  }
+
+  Future<Software> updateSoftware(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.softwares, id), data: data);
+    return Software.fromJson(response.data);
+  }
+
+  Future<void> deleteSoftware(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.softwares, id));
+  }
+
+  Future<Map<String, dynamic>> resetSoftwareToken(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.softwares, id, 'reset_token'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> resetTelemetryToken(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.softwares, id, 'reset_telemetry_token'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> resetAnnouncementToken(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.softwares, id, 'reset_announcement_token'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> resetUpdateToken(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.softwares, id, 'reset_update_token'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  // ---- Members ----
+  Future<List<SoftwareMember>> getMembers(String softwareId) async {
+    final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'members'));
+    return (response.data as List).map((j) => SoftwareMember.fromJson(j)).toList();
+  }
+
+  Future<void> addMember(String softwareId, Map<String, dynamic> data) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'members'), data: data);
+  }
+
+  Future<void> removeMember(String softwareId, String memberId) async {
+    await _dio.delete('${ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'members')}$memberId/');
+  }
+
+  // ---- Channels ----
+  Future<List<Channel>> getChannels([String? softwareId]) async {
+    final params = softwareId != null ? {'software': softwareId} : null;
+    final response = await _dio.get(ApiConfig.channels, queryParameters: params);
+    return (response.data as List).map((j) => Channel.fromJson(j)).toList();
+  }
+
+  Future<Channel> createChannel(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.channels, data: data);
+    return Channel.fromJson(response.data);
+  }
+
+  Future<Channel> updateChannel(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.channels, id), data: data);
+    return Channel.fromJson(response.data);
+  }
+
+  Future<void> deleteChannel(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.channels, id));
+  }
+
+  // ---- Versions ----
+  Future<List<Version>> getVersions(String softwareId) async {
+    final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'versions'));
+    return (response.data as List).map((j) => Version.fromJson(j)).toList();
+  }
+
+  Future<Version> createVersion(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.versions, data: data);
+    return Version.fromJson(response.data);
+  }
+
+  Future<Version> updateVersion(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.versions, id), data: data);
+    return Version.fromJson(response.data);
+  }
+
+  Future<void> deleteVersion(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.versions, id));
+  }
+
+  Future<void> publishVersion(String id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.versions, id, 'publish'));
+  }
+
+  Future<void> deprecateVersion(String id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.versions, id, 'deprecate'));
+  }
+
+  Future<void> setGrayVersion(String id, int percentage) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.versions, id, 'set_gray'), data: {'percentage': percentage});
+  }
+
+  // ---- Storages ----
+  Future<List<StorageBackend>> getStorages() async {
+    final response = await _dio.get(ApiConfig.storages);
+    return (response.data as List).map((j) => StorageBackend.fromJson(j)).toList();
+  }
+
+  Future<StorageBackend> getStorage(String id) async {
+    final response = await _dio.get(ApiConfig.resourceUrl(ApiConfig.storages, id));
+    return StorageBackend.fromJson(response.data);
+  }
+
+  Future<StorageBackend> createStorage(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.storages, data: data);
+    return StorageBackend.fromJson(response.data);
+  }
+
+  Future<StorageBackend> updateStorage(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.storages, id), data: data);
+    return StorageBackend.fromJson(response.data);
+  }
+
+  Future<void> deleteStorage(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.storages, id));
+  }
+
+  Future<Map<String, dynamic>> testStorageConnection(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.storages, id, 'test_connection'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<List<StorageFile>> getStorageFiles(String storageId, {String prefix = ''}) async {
+    final params = prefix.isNotEmpty ? {'prefix': prefix} : null;
+    final response = await _dio.get(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'files'),
+      queryParameters: params,
+    );
+    final data = response.data;
+    final files = (data is Map ? data['files'] : data) as List;
+    return files.map((j) => StorageFile.fromJson(j)).toList();
+  }
+
+  Future<void> uploadFile(String storageId, String filePath, String fileName,
+      {String pathPrefix = '', void Function(int, int)? onProgress}) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      if (pathPrefix.isNotEmpty) 'path': pathPrefix,
+    });
+    await _dio.post(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'upload'),
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+      onSendProgress: onProgress != null
+          ? (sent, total) => onProgress(sent, total)
+          : null,
+    );
+  }
+
+  Future<void> createFolder(String storageId, String path, String name) async {
+    await _dio.post(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'create_folder'),
+      data: {'path': path, 'name': name},
+    );
+  }
+
+  Future<void> renameFile(String storageId, String key, String newName) async {
+    await _dio.post(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'rename'),
+      data: {'key': key, 'new_name': newName},
+    );
+  }
+
+  Future<void> deleteStorageFile(String storageId, String key) async {
+    await _dio.post(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'delete_file'),
+      data: {'key': key},
+    );
+  }
+
+  Future<String> generateStorageUrl(String storageId, String key, String linkType, {int expires = 86400}) async {
+    final response = await _dio.get(
+      ApiConfig.actionUrl(ApiConfig.storages, storageId, 'generate_url'),
+      queryParameters: {'key': key, 'link_type': linkType, 'expires': expires},
+    );
+    return response.data['url'] as String;
+  }
+
+  // ---- Announcements ----
+  Future<List<Announcement>> getAnnouncements(String softwareId) async {
+    final response = await _dio.get(
+      ApiConfig.announcements,
+      queryParameters: {'software': softwareId},
+    );
+    return (response.data as List).map((j) => Announcement.fromJson(j)).toList();
+  }
+
+  Future<Announcement> createAnnouncement(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.announcements, data: data);
+    return Announcement.fromJson(response.data);
+  }
+
+  Future<Announcement> updateAnnouncement(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.announcements, id), data: data);
+    return Announcement.fromJson(response.data);
+  }
+
+  Future<void> deleteAnnouncement(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.announcements, id));
+  }
+
+  Future<Announcement> publishAnnouncement(String id) async {
+    final response = await _dio.post(ApiConfig.actionUrl(ApiConfig.announcements, id, 'publish'));
+    return Announcement.fromJson(response.data);
+  }
+
+  // ---- Telemetry ----
+  Future<List<TelemetryData>> getTelemetryData({Map<String, dynamic>? params}) async {
+    final response = await _dio.get(ApiConfig.telemetryData, queryParameters: params);
+    return (response.data as List).map((j) => TelemetryData.fromJson(j)).toList();
+  }
+
+  Future<void> deleteTelemetryData(int id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.telemetryData, id));
+  }
+
+  Future<void> batchDeleteTelemetry(List<int> ids) async {
+    await _dio.post('${ApiConfig.telemetryData}batch-delete/', data: {'ids': ids});
+  }
+
+  Future<Map<String, dynamic>> getTelemetryStats(String softwareId, {Map<String, dynamic>? params}) async {
+    final queryParams = params ?? {};
+    queryParams['software'] = softwareId;
+    final response = await _dio.get(ApiConfig.telemetryStats, queryParameters: queryParams);
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<List<Map<String, dynamic>>> getMetricDefinitions({Map<String, dynamic>? params}) async {
+    final response = await _dio.get(ApiConfig.telemetryDefinitions, queryParameters: params);
+    return (response.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> createMetricDefinition(Map<String, dynamic> data) async {
+    await _dio.post(ApiConfig.telemetryDefinitions, data: data);
+  }
+
+  Future<void> updateMetricDefinition(int id, Map<String, dynamic> data) async {
+    await _dio.put(ApiConfig.resourceUrl(ApiConfig.telemetryDefinitions, id), data: data);
+  }
+
+  Future<void> deleteMetricDefinition(int id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.telemetryDefinitions, id));
+  }
+
+  Future<List<Map<String, dynamic>>> getIssues({Map<String, dynamic>? params}) async {
+    final response = await _dio.get(ApiConfig.telemetryIssues, queryParameters: params);
+    return (response.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> updateIssue(int id, Map<String, dynamic> data) async {
+    await _dio.put(ApiConfig.resourceUrl(ApiConfig.telemetryIssues, id), data: data);
+  }
+
+  Future<List<TelemetryData>> getIssueLogs(int issueId) async {
+    final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.telemetryIssues, issueId, 'logs'));
+    return (response.data as List).map((j) => TelemetryData.fromJson(j)).toList();
+  }
+
+  // ---- Config Items ----
+  Future<List<ConfigItem>> getConfigItems({required String softwareId}) async {
+    final response = await _dio.get(
+      ApiConfig.configItems,
+      queryParameters: {'software': softwareId},
+    );
+    return (response.data as List).map((j) => ConfigItem.fromJson(j)).toList();
+  }
+
+  Future<ConfigItem> createConfigItem(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.configItems, data: data);
+    return ConfigItem.fromJson(response.data);
+  }
+
+  Future<ConfigItem> updateConfigItem(String id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.configItems, id), data: data);
+    return ConfigItem.fromJson(response.data);
+  }
+
+  Future<void> deleteConfigItem(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.configItems, id));
+  }
+
+  // ---- GitHub ----
+  Future<Map<String, dynamic>> getGithubOAuthUrl() async {
+    final response = await _dio.get(ApiConfig.githubOauth);
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<GitHubAccount?> getGithubAccount() async {
+    try {
+      final response = await _dio.get(ApiConfig.githubAccount);
+      return GitHubAccount.fromJson(response.data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> unbindGithub() async {
+    await _dio.delete('${ApiConfig.githubAccount}unbind/');
+  }
+
+  Future<List<Map<String, dynamic>>> getGithubRepos() async {
+    final response = await _dio.get(ApiConfig.githubRepos);
+    return (response.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getGithubReleases(String repo) async {
+    final response = await _dio.get(
+      ApiConfig.githubReleases,
+      queryParameters: {'repo': repo},
+    );
+    return (response.data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<GitHubMirror>> getGithubMirrors() async {
+    final response = await _dio.get(ApiConfig.githubMirrors);
+    return (response.data as List).map((j) => GitHubMirror.fromJson(j)).toList();
+  }
+
+  Future<void> createGithubMirror(Map<String, dynamic> data) async {
+    await _dio.post(ApiConfig.githubMirrors, data: data);
+  }
+
+  Future<void> updateGithubMirror(String id, Map<String, dynamic> data) async {
+    await _dio.put(ApiConfig.resourceUrl(ApiConfig.githubMirrors, id), data: data);
+  }
+
+  Future<void> deleteGithubMirror(String id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.githubMirrors, id));
+  }
+
+  // ---- Gitea ----
+  Future<GiteaAccount> getGiteaAccount() async {
+    try {
+      final response = await _dio.get(ApiConfig.giteaAccount);
+      return GiteaAccount.fromJson(response.data);
+    } catch (_) {
+      return GiteaAccount(connected: false);
+    }
+  }
+
+  Future<Map<String, dynamic>> getGiteaAuthUrl() async {
+    final response = await _dio.get(ApiConfig.giteaAuthUrl);
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> unbindGitea() async {
+    await _dio.post(ApiConfig.giteaDisconnect);
+  }
 }

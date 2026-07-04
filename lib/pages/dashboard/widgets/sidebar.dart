@@ -162,8 +162,8 @@ class Sidebar extends StatelessWidget {
                 _NavItem(
                   icon: Icons.layers_outlined,
                   label: '版本管理',
-                  isSelected: currentRoute.startsWith('/dashboard/versions'),
-                  onTap: () => onNavigate('/dashboard/versions'),
+                  isSelected: currentRoute.contains('/versions'),
+                  onTap: () => onNavigate('/dashboard/softwares'),
                 ),
                 _NavItem(
                   icon: Icons.campaign_outlined,

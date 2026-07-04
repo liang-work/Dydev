@@ -7,6 +7,9 @@ class User {
   final String bio;
   final String email;
   final String phone;
+  final String dateJoined;
+  final String lastLogin;
+  final bool isActive;
 
   User({
     required this.id,
@@ -16,6 +19,9 @@ class User {
     this.bio = '',
     this.email = '',
     this.phone = '',
+    this.dateJoined = '',
+    this.lastLogin = '',
+    this.isActive = true,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -27,6 +33,9 @@ class User {
       bio: json['bio'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
+      dateJoined: json['date_joined'] as String? ?? '',
+      lastLogin: json['last_login'] as String? ?? '',
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
@@ -38,5 +47,8 @@ class User {
         'bio': bio,
         'email': email,
         'phone': phone,
+        'date_joined': dateJoined,
+        'last_login': lastLogin,
+        'is_active': isActive,
       };
 }
