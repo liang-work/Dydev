@@ -167,12 +167,6 @@ class Sidebar extends StatelessWidget {
                   onTap: () => onNavigate('/dashboard/softwares'),
                 ),
                 _NavItem(
-                  icon: Icons.layers_outlined,
-                  label: 'nav.versions'.tr(),
-                  isSelected: currentRoute.contains('/versions'),
-                  onTap: () => onNavigate('/dashboard/softwares'),
-                ),
-                _NavItem(
                   icon: Icons.campaign_outlined,
                   label: 'nav.announcements'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/announcements'),

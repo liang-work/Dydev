@@ -64,7 +64,6 @@ class DevPlatformApp extends StatelessWidget {
             GoRoute(path: '/dashboard/softwares', name: 'softwares', builder: (_, _) => const SoftwareListPage()),
             GoRoute(path: '/dashboard/softwares/:id', name: 'software_detail', builder: (_, state) => SoftwareDetailPage(softwareId: state.pathParameters['id']!)),
             GoRoute(path: '/dashboard/softwares/:id/versions', name: 'version_list', builder: (_, state) => VersionListPage(softwareId: state.pathParameters['id']!)),
-            GoRoute(path: '/dashboard/versions', name: 'versions_redirect', redirect: (_, _) => '/dashboard/softwares'),
             GoRoute(path: '/dashboard/announcements', name: 'announcements', builder: (_, _) => const AnnouncementListPage()),
             GoRoute(path: '/dashboard/telemetry', name: 'telemetry', builder: (_, _) => const TelemetryListPage()),
             GoRoute(path: '/dashboard/apps', name: 'apps', builder: (_, _) => const AppListPage()),

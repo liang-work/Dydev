@@ -67,6 +67,11 @@ class DashboardLayout extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const Spacer(),
+          IconButton(
+            icon: Icon(Icons.settings_outlined, color: Colors.grey.shade500, size: 20),
+            tooltip: 'nav.settings'.tr(),
+            onPressed: () => context.go('/dashboard/settings'),
+          ),
           if (auth.user != null)
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -89,7 +94,6 @@ class DashboardLayout extends StatelessWidget {
     if (path.startsWith('/dashboard/notifications')) return 'app_bar.notifications'.tr();
     if (path.startsWith('/dashboard/storages')) return 'app_bar.storages'.tr();
     if (path.startsWith('/dashboard/softwares')) return 'app_bar.softwares'.tr();
-    if (path.startsWith('/dashboard/versions')) return 'app_bar.versions'.tr();
     if (path.startsWith('/dashboard/announcements')) return 'app_bar.announcements'.tr();
     if (path.startsWith('/dashboard/telemetry')) return 'app_bar.telemetry'.tr();
     if (path.startsWith('/dashboard/config')) return 'app_bar.config'.tr();

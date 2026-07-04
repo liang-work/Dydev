@@ -234,8 +234,11 @@ class ApiService {
 
   // ---- Channels ----
   Future<List<Channel>> getChannels([String? softwareId]) async {
-    final params = softwareId != null ? {'software': softwareId} : null;
-    final response = await _dio.get(ApiConfig.channels, queryParameters: params);
+    if (softwareId != null) {
+      final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'channels'));
+      return _unwrapList(response.data).map((j) => Channel.fromJson(j)).toList();
+    }
+    final response = await _dio.get(ApiConfig.channels);
     return _unwrapList(response.data).map((j) => Channel.fromJson(j)).toList();
   }
 

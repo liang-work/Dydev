@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/software.dart';
 import '../../models/version.dart';
 import '../../models/channel.dart';
+import '../../models/storage_backend.dart';
+import '../../models/storage_file.dart';
+import '../../models/github_account.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/logger_service.dart';
 
@@ -43,6 +47,24 @@ class _VersionListPageState extends State<VersionListPage> {
   Version? _grayVersion;
   double _grayPercentage = 100;
 
+  // Storage selector
+  bool _showStorageSelector = false;
+  List<StorageBackend> _storages = [];
+  String? _selectedStorageId;
+  List<StorageFile> _storageFiles = [];
+  String _storagePath = '';
+  bool _loadingStorageFiles = false;
+  StorageFile? _selectedStorageFile;
+
+  // GitHub Release selector
+  bool _showGithubSelector = false;
+  GitHubAccount? _githubAccount;
+  List<Map<String, dynamic>> _githubRepos = [];
+  String? _selectedGithubRepo;
+  List<Map<String, dynamic>> _githubReleases = [];
+  Map<String, dynamic>? _selectedGithubRelease;
+  Map<String, dynamic>? _selectedGithubAsset;
+
   @override
   void initState() {
     super.initState();
@@ -71,10 +93,19 @@ class _VersionListPageState extends State<VersionListPage> {
         api.getSoftware(widget.softwareId),
         api.getVersions(widget.softwareId),
         api.getChannels(widget.softwareId),
+        api.getStorages(),
+        api.getGithubAccount().catchError((_) => null),
       ]);
       _software = results[0] as Software;
       _versions = results[1] as List<Version>;
       _channels = results[2] as List<Channel>;
+      _storages = results[3] as List<StorageBackend>;
+      _githubAccount = results[4] as GitHubAccount?;
+      if (_githubAccount != null) {
+        try {
+          _githubRepos = await api.getGithubRepos();
+        } catch (_) {}
+      }
       LoggerService.d('VersionList', 'loaded software=${_software?.name}, versions=${_versions.length}, channels=${_channels.length}');
     } catch (e, s) {
       LoggerService.e('_VersionListPageState', 'load versions', e, s);
@@ -211,6 +242,108 @@ class _VersionListPageState extends State<VersionListPage> {
 
   void _removeAsset(int i) {
     setState(() => _formAssets.removeAt(i));
+  }
+
+  // ---- Storage selector ----
+  void _openStorageSelector() {
+    setState(() {
+      _showStorageSelector = true;
+      _selectedStorageId = null;
+      _storageFiles = [];
+      _storagePath = '';
+      _selectedStorageFile = null;
+    });
+  }
+
+  Future<void> _loadStorageFiles() async {
+    if (_selectedStorageId == null) return;
+    setState(() => _loadingStorageFiles = true);
+    try {
+      final api = context.read<AuthProvider>().apiService;
+      _storageFiles = await api.getStorageFiles(_selectedStorageId!, prefix: _storagePath);
+    } catch (_) {}
+    if (mounted) setState(() => _loadingStorageFiles = false);
+  }
+
+  void _closeStorageSelector() {
+    setState(() {
+      _showStorageSelector = false;
+      _selectedStorageId = null;
+      _storageFiles = [];
+      _storagePath = '';
+      _selectedStorageFile = null;
+    });
+  }
+
+  Future<void> _confirmStorageFile() async {
+    if (_selectedStorageFile == null || _selectedStorageId == null) return;
+    try {
+      final api = context.read<AuthProvider>().apiService;
+      final url = await api.generateStorageUrl(_selectedStorageId!, _selectedStorageFile!.key, 'direct');
+      _formUrlCtrl.text = url;
+      _formFileSizeCtrl.text = _selectedStorageFile!.size.toString();
+      _closeStorageSelector();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('生成链接失败: $e')));
+    }
+  }
+
+  // ---- GitHub Release selector ----
+  void _openGithubSelector() {
+    setState(() {
+      _showGithubSelector = true;
+      _selectedGithubRepo = null;
+      _githubReleases = [];
+      _selectedGithubRelease = null;
+      _selectedGithubAsset = null;
+    });
+  }
+
+  Future<void> _onGithubRepoChanged() async {
+    setState(() {
+      _githubReleases = [];
+      _selectedGithubRelease = null;
+      _selectedGithubAsset = null;
+    });
+    if (_selectedGithubRepo == null || _selectedGithubRepo!.isEmpty) return;
+    try {
+      final api = context.read<AuthProvider>().apiService;
+      _githubReleases = await api.getGithubReleases(_selectedGithubRepo!);
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  void _closeGithubSelector() {
+    setState(() {
+      _showGithubSelector = false;
+      _selectedGithubRepo = null;
+      _githubReleases = [];
+      _selectedGithubRelease = null;
+      _selectedGithubAsset = null;
+    });
+  }
+
+  void _confirmGithubAsset() {
+    if (_selectedGithubAsset == null) return;
+    final url = _selectedGithubAsset!['browser_download_url'] as String? ?? '';
+    final size = _selectedGithubAsset!['size'] as int? ?? 0;
+    _formUrlCtrl.text = url;
+    if (size > 0) _formFileSizeCtrl.text = size.toString();
+    if (_selectedGithubRelease != null) {
+      final tag = _selectedGithubRelease!['tag_name'] as String? ?? '';
+      final title = _selectedGithubRelease!['name'] as String? ?? '';
+      final body = _selectedGithubRelease!['body'] as String? ?? '';
+      if (_formVersionCtrl.text.isEmpty) {
+        _formVersionCtrl.text = tag.startsWith('v') ? tag.substring(1) : tag;
+      }
+      if (_formTitleCtrl.text.isEmpty && title.isNotEmpty) {
+        _formTitleCtrl.text = title;
+      }
+      if (_formNotesCtrl.text.isEmpty && body.isNotEmpty) {
+        _formNotesCtrl.text = body;
+      }
+    }
+    _closeGithubSelector();
   }
 
   String _statusLabel(String s) {
@@ -410,6 +543,8 @@ class _VersionListPageState extends State<VersionListPage> {
       ),
       _buildDialogOverlay(),
       _buildGrayDialog(),
+      _buildStorageSelector(),
+      _buildGithubSelector(),
     ]);
   }
 
@@ -520,6 +655,22 @@ class _VersionListPageState extends State<VersionListPage> {
                         controller: _formUrlCtrl,
                         decoration: const InputDecoration(labelText: '下载链接 *', border: OutlineInputBorder()),
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _openStorageSelector(),
+                      icon: const Icon(Icons.storage, size: 16),
+                      label: const Text('从存储选择'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _openGithubSelector(),
+                      icon: const Icon(Icons.code, size: 16),
+                      label: const Text('GitHub Release'),
                     ),
                   ],
                 ),
@@ -661,6 +812,198 @@ class _VersionListPageState extends State<VersionListPage> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStorageSelector() {
+    if (!_showStorageSelector) return const SizedBox.shrink();
+    return Material(
+      color: Colors.black26,
+      child: Center(
+        child: Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('从存储选择文件', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedStorageId,
+                    decoration: const InputDecoration(labelText: '选择存储', border: OutlineInputBorder()),
+                    items: _storages.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                    onChanged: (v) {
+                      setState(() => _selectedStorageId = v);
+                      _loadStorageFiles();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (_selectedStorageId != null)
+                    Expanded(
+                      child: _loadingStorageFiles
+                          ? const Center(child: CircularProgressIndicator())
+                          : _storageFiles.isEmpty
+                              ? Center(child: Text('当前目录为空', style: TextStyle(color: Colors.grey.shade500)))
+                              : ListView.builder(
+                                  itemCount: _storageFiles.length,
+                                  itemBuilder: (_, i) {
+                                    final file = _storageFiles[i];
+                                    final selected = _selectedStorageFile?.key == file.key;
+                                    return ListTile(
+                                      dense: true,
+                                      selected: selected,
+                                      leading: Icon(file.isDirectory ? Icons.folder : Icons.insert_drive_file, size: 18),
+                                      title: Text(file.name, style: const TextStyle(fontSize: 14)),
+                                      trailing: file.isDirectory ? null : Text(file.sizeFormatted, style: const TextStyle(fontSize: 12)),
+                                      onTap: () {
+                                        if (file.isDirectory) {
+                                          _storagePath = file.path;
+                                          _loadStorageFiles();
+                                        } else {
+                                          setState(() => _selectedStorageFile = file);
+                                        }
+                                      },
+                                    );
+                                  },
+                                ),
+                    ),
+                  const SizedBox(height: 16),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    OutlinedButton(onPressed: _closeStorageSelector, child: const Text('取消')),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: _selectedStorageFile != null ? _confirmStorageFile : null,
+                      child: const Text('确认选择'),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGithubSelector() {
+    if (!_showGithubSelector) return const SizedBox.shrink();
+    return Material(
+      color: Colors.black26,
+      child: Center(
+        child: Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('选择 GitHub Release', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  if (_githubAccount == null)
+                    Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.code, size: 48, color: Colors.grey.shade300),
+                          const SizedBox(height: 8),
+                          Text('请先在设置中绑定 GitHub 账号', style: TextStyle(color: Colors.grey.shade500)),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: () {
+                              _closeGithubSelector();
+                              context.go('/dashboard/settings');
+                            },
+                            child: const Text('前往设置'),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedGithubRepo,
+                      decoration: const InputDecoration(labelText: '选择仓库', border: OutlineInputBorder()),
+                      items: _githubRepos.map((r) => DropdownMenuItem(value: r['full_name'] as String?, child: Text(r['name'] as String? ?? ''))).toList(),
+                      onChanged: (v) {
+                        setState(() => _selectedGithubRepo = v);
+                        _onGithubRepoChanged();
+                      },
+                    ),
+                    if (_selectedGithubRepo != null) ...[
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _githubReleases.isEmpty
+                            ? Center(child: Text('暂无 Release', style: TextStyle(color: Colors.grey.shade500)))
+                            : ListView.builder(
+                                itemCount: _githubReleases.length,
+                                itemBuilder: (_, i) {
+                                  final release = _githubReleases[i];
+                                  final tag = release['tag_name'] as String? ?? '';
+                                  final name = release['name'] as String? ?? '';
+                                  final assets = release['assets'] as List? ?? [];
+                                  final selected = _selectedGithubRelease == release;
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 4),
+                                    color: selected ? Theme.of(context).colorScheme.primaryContainer : null,
+                                    child: InkWell(
+                                      onTap: () => setState(() {
+                                        _selectedGithubRelease = release;
+                                        _selectedGithubAsset = null;
+                                      }),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(tag, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                            if (name.isNotEmpty) Text(name, style: const TextStyle(fontSize: 13)),
+                                            Text('${assets.length} 个附件', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                    if (_selectedGithubRelease != null) ...[
+                      const SizedBox(height: 8),
+                      const Text('选择附件', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 4),
+                      ...(_selectedGithubRelease!['assets'] as List? ?? []).map<Widget>((asset) {
+                        final a = asset as Map<String, dynamic>;
+                        final assetName = a['name'] as String? ?? '';
+                        final assetSize = a['size'] as int? ?? 0;
+                        final selected = _selectedGithubAsset == a;
+                        return ListTile(
+                          dense: true,
+                          selected: selected,
+                          title: Text(assetName, style: const TextStyle(fontSize: 13)),
+                          trailing: Text(_formatFileSize(assetSize), style: const TextStyle(fontSize: 12)),
+                          onTap: () => setState(() => _selectedGithubAsset = a),
+                        );
+                      }),
+                    ],
+                  ],
+                  const SizedBox(height: 16),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    OutlinedButton(onPressed: _closeGithubSelector, child: const Text('取消')),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: _selectedGithubAsset != null ? _confirmGithubAsset : null,
+                      child: const Text('确认选择'),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

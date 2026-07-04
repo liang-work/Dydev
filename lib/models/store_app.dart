@@ -54,6 +54,13 @@ class StoreApp {
   final int ratingCount;
   final int reviewCount;
   final String shortDescription;
+  final String description;
+  final String subtitle;
+  final String websiteUrl;
+  final String sourceUrl;
+  final String developerName;
+  final String developerEmail;
+  final List<String> platforms;
   final String createdAt;
   final String updatedAt;
 
@@ -70,6 +77,13 @@ class StoreApp {
     this.ratingCount = 0,
     this.reviewCount = 0,
     this.shortDescription = '',
+    this.description = '',
+    this.subtitle = '',
+    this.websiteUrl = '',
+    this.sourceUrl = '',
+    this.developerName = '',
+    this.developerEmail = '',
+    this.platforms = const [],
     this.createdAt = '',
     this.updatedAt = '',
   });
@@ -88,6 +102,13 @@ class StoreApp {
       ratingCount: json['rating_count'] ?? 0,
       reviewCount: json['review_count'] ?? 0,
       shortDescription: json['short_description'] ?? '',
+      description: json['description'] ?? '',
+      subtitle: json['subtitle'] ?? '',
+      websiteUrl: json['website_url'] ?? '',
+      sourceUrl: json['source_url'] ?? '',
+      developerName: json['developer_name'] ?? '',
+      developerEmail: json['developer_email'] ?? '',
+      platforms: (json['platforms'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       createdAt: json['created_at'] ?? '',
       updatedAt: json['updated_at'] ?? '',
     );
@@ -100,13 +121,13 @@ class StoreApp {
         'icon_url': iconUrl,
         'current_version': currentVersion,
         'status': status.name,
-        'download_count': downloadCount,
-        'view_count': viewCount,
-        'rating_average': ratingAverage,
-        'rating_count': ratingCount,
-        'review_count': reviewCount,
         'short_description': shortDescription,
-        'created_at': createdAt,
-        'updated_at': updatedAt,
+        'description': description,
+        'subtitle': subtitle,
+        'website_url': websiteUrl,
+        'source_url': sourceUrl,
+        'developer_name': developerName,
+        'developer_email': developerEmail,
+        'platforms': platforms,
       };
 }

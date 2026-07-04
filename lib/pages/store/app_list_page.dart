@@ -22,8 +22,15 @@ class _AppListPageState extends State<AppListPage> {
   final _formNameCtrl = TextEditingController();
   final _formSlugCtrl = TextEditingController();
   final _formDescCtrl = TextEditingController();
+  final _formDetailCtrl = TextEditingController();
+  final _formSubtitleCtrl = TextEditingController();
   final _formVersionCtrl = TextEditingController();
   final _formIconCtrl = TextEditingController();
+  final _formWebsiteCtrl = TextEditingController();
+  final _formSourceCtrl = TextEditingController();
+  final _formDeveloperCtrl = TextEditingController();
+  final _formEmailCtrl = TextEditingController();
+  List<String> _formPlatforms = [];
 
   @override
   void initState() {
@@ -36,8 +43,14 @@ class _AppListPageState extends State<AppListPage> {
     _formNameCtrl.dispose();
     _formSlugCtrl.dispose();
     _formDescCtrl.dispose();
+    _formDetailCtrl.dispose();
+    _formSubtitleCtrl.dispose();
     _formVersionCtrl.dispose();
     _formIconCtrl.dispose();
+    _formWebsiteCtrl.dispose();
+    _formSourceCtrl.dispose();
+    _formDeveloperCtrl.dispose();
+    _formEmailCtrl.dispose();
     super.dispose();
   }
 
@@ -60,8 +73,15 @@ class _AppListPageState extends State<AppListPage> {
     _formNameCtrl.clear();
     _formSlugCtrl.clear();
     _formDescCtrl.clear();
+    _formDetailCtrl.clear();
+    _formSubtitleCtrl.clear();
     _formVersionCtrl.clear();
     _formIconCtrl.clear();
+    _formWebsiteCtrl.clear();
+    _formSourceCtrl.clear();
+    _formDeveloperCtrl.clear();
+    _formEmailCtrl.clear();
+    _formPlatforms = [];
     setState(() => _showDialog = true);
   }
 
@@ -70,8 +90,15 @@ class _AppListPageState extends State<AppListPage> {
     _formNameCtrl.text = app.name;
     _formSlugCtrl.text = app.slug;
     _formDescCtrl.text = app.shortDescription;
+    _formDetailCtrl.text = app.description;
+    _formSubtitleCtrl.text = app.subtitle;
     _formVersionCtrl.text = app.currentVersion;
     _formIconCtrl.text = app.iconUrl;
+    _formWebsiteCtrl.text = app.websiteUrl;
+    _formSourceCtrl.text = app.sourceUrl;
+    _formDeveloperCtrl.text = app.developerName;
+    _formEmailCtrl.text = app.developerEmail;
+    _formPlatforms = [...app.platforms];
     setState(() => _showDialog = true);
   }
 
@@ -82,8 +109,15 @@ class _AppListPageState extends State<AppListPage> {
         'name': _formNameCtrl.text,
         'slug': _formSlugCtrl.text,
         'short_description': _formDescCtrl.text,
+        'description': _formDetailCtrl.text,
+        'subtitle': _formSubtitleCtrl.text,
         'current_version': _formVersionCtrl.text,
         'icon_url': _formIconCtrl.text,
+        'website_url': _formWebsiteCtrl.text,
+        'source_url': _formSourceCtrl.text,
+        'developer_name': _formDeveloperCtrl.text,
+        'developer_email': _formEmailCtrl.text,
+        'platforms': _formPlatforms,
       };
       final api = context.read<AuthProvider>().apiService;
       if (_editing != null) {
@@ -335,36 +369,79 @@ class _AppListPageState extends State<AppListPage> {
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
+            constraints: const BoxConstraints(maxWidth: 560, maxHeight: 600),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_editing != null ? 'store.edit'.tr() : 'store.create'.tr(), style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 20),
-                  TextField(controller: _formNameCtrl, decoration: InputDecoration(labelText: 'store.name'.tr(), border: const OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formSlugCtrl, decoration: InputDecoration(labelText: 'store.slug'.tr(), border: const OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formDescCtrl, maxLines: 3, decoration: InputDecoration(labelText: 'store.short_description'.tr(), border: const OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formVersionCtrl, decoration: InputDecoration(labelText: 'store.version'.tr(), border: const OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formIconCtrl, decoration: InputDecoration(labelText: 'store.icon'.tr(), border: const OutlineInputBorder())),
-                  const SizedBox(height: 20),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    OutlinedButton(onPressed: () => setState(() => _showDialog = false), child: Text('common.cancel'.tr())),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(_editing != null ? 'common.save'.tr() : 'common.create'.tr()),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_editing != null ? 'store.edit'.tr() : 'store.create'.tr(), style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 20),
+                    TextField(controller: _formNameCtrl, decoration: InputDecoration(labelText: 'store.name'.tr(), border: const OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _formSlugCtrl, decoration: InputDecoration(labelText: 'store.slug'.tr(), border: const OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _formSubtitleCtrl, decoration: const InputDecoration(labelText: '副标题', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _formDescCtrl, maxLines: 2, decoration: InputDecoration(labelText: 'store.short_description'.tr(), border: const OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _formDetailCtrl, maxLines: 4, decoration: const InputDecoration(labelText: '详细描述', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    Text('支持平台', style: const TextStyle(fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      children: ['Windows', 'macOS', 'Linux', 'Android', 'iOS'].map((p) => FilterChip(
+                        label: Text(p, style: const TextStyle(fontSize: 13)),
+                        selected: _formPlatforms.contains(p),
+                        onSelected: (_) {
+                          setState(() {
+                            if (_formPlatforms.contains(p)) { _formPlatforms.remove(p); } else { _formPlatforms.add(p); }
+                          });
+                        },
+                      )).toList(),
                     ),
-                  ]),
-                ],
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(child: TextField(controller: _formIconCtrl, decoration: InputDecoration(labelText: 'store.icon'.tr(), border: const OutlineInputBorder()))),
+                    ]),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(child: TextField(controller: _formVersionCtrl, decoration: InputDecoration(labelText: 'store.version'.tr(), border: const OutlineInputBorder()))),
+                    ]),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Text('网站与源码', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextField(controller: _formWebsiteCtrl, decoration: const InputDecoration(labelText: '官网链接', border: OutlineInputBorder(), hintText: 'https://...')),
+                    const SizedBox(height: 12),
+                    TextField(controller: _formSourceCtrl, decoration: const InputDecoration(labelText: '源码链接', border: OutlineInputBorder(), hintText: 'https://github.com/...')),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Text('开发者信息', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(child: TextField(controller: _formDeveloperCtrl, decoration: const InputDecoration(labelText: '开发者名称', border: OutlineInputBorder()))),
+                      const SizedBox(width: 12),
+                      Expanded(child: TextField(controller: _formEmailCtrl, decoration: const InputDecoration(labelText: '开发者邮箱', border: OutlineInputBorder()))),
+                    ]),
+                    const SizedBox(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      OutlinedButton(onPressed: () => setState(() => _showDialog = false), child: Text('common.cancel'.tr())),
+                      const SizedBox(width: 12),
+                      FilledButton(
+                        onPressed: _submitting ? null : _submit,
+                        child: _submitting
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : Text(_editing != null ? 'common.save'.tr() : 'common.create'.tr()),
+                      ),
+                    ]),
+                  ],
+                ),
               ),
             ),
           ),
