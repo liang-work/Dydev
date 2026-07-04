@@ -4,16 +4,21 @@ import '../models/user.dart';
 import '../models/store_app.dart';
 import '../models/dashboard_stats.dart';
 import 'auth_service.dart';
+import 'logger_service.dart';
 
 /// Dio-based HTTP client for the Developer Platform API.
 ///
 /// Automatically attaches the Bearer token on every request
 /// and attempts token refresh on 401 responses.
 class ApiService {
+  static const _tag = 'ApiService';
+
   late final Dio _dio;
   final AuthService _authService;
 
   ApiService({required AuthService authService}) : _authService = authService {
+    LoggerService.d(_tag, 'Initialising API service (baseUrl: ${ApiConfig.baseUrl})');
+
     _dio = Dio(BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 15),
@@ -21,7 +26,26 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
     ));
 
-    // Request interceptor: attach Bearer token.
+    // Logging interceptor: trace every request / response.
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        LoggerService.d(_tag, '--> ${options.method} ${options.path}');
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        LoggerService.d(_tag,
+            '<-- ${response.statusCode} ${response.requestOptions.path}');
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        LoggerService.e(_tag,
+            '<-- ERROR ${error.response?.statusCode} ${error.requestOptions.path}: ${error.message}',
+            error.error, error.stackTrace);
+        handler.next(error);
+      },
+    ));
+
+    // Auth interceptor: attach Bearer token + auto-refresh on 401.
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _authService.getAccessToken();
@@ -31,8 +55,8 @@ class ApiService {
         handler.next(options);
       },
       onError: (error, handler) async {
-        // If we get a 401, attempt a token refresh once.
         if (error.response?.statusCode == 401) {
+          LoggerService.w(_tag, 'Got 401, attempting token refresh ...');
           final refreshToken = await _authService.getRefreshToken();
           if (refreshToken != null) {
             try {
@@ -44,15 +68,15 @@ class ApiService {
               );
 
               final newAccess = refreshResponse.data['access'] as String;
+              LoggerService.i(_tag, 'Token refreshed successfully');
               await _authService.saveTokens(accessToken: newAccess);
 
-              // Retry the original request with the new token.
               final retryOptions = error.requestOptions;
               retryOptions.headers['Authorization'] = 'Bearer $newAccess';
               final retryResponse = await _dio.fetch(retryOptions);
               return handler.resolve(retryResponse);
-            } catch (_) {
-              // Refresh failed — let the caller handle the 401.
+            } catch (e) {
+              LoggerService.e(_tag, 'Token refresh failed', e);
             }
           }
         }
@@ -66,11 +90,14 @@ class ApiService {
   /// Validate an access token by fetching the user profile.
   /// Returns the [User] on success, throws on failure.
   Future<User> validateToken(String token) async {
+    LoggerService.i(_tag, 'Validating token ...');
     final response = await Dio(BaseOptions(baseUrl: ApiConfig.baseUrl)).get(
       ApiConfig.userMe,
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
-    return User.fromJson(response.data);
+    final user = User.fromJson(response.data);
+    LoggerService.i(_tag, 'Token valid, user: ${user.username}');
+    return user;
   }
 
   // ---- User ----
@@ -85,19 +112,23 @@ class ApiService {
 
   /// Fetch the developer's own apps.
   Future<List<StoreApp>> getMyApps() async {
+    LoggerService.d(_tag, 'getMyApps');
     final response = await _dio.get(ApiConfig.storeMyApps);
     final List<dynamic> data = response.data;
+    LoggerService.d(_tag, 'Fetched ${data.length} apps');
     return data.map((j) => StoreApp.fromJson(j)).toList();
   }
 
   /// Fetch store-wide statistics.
   Future<DashboardStats> getStoreStats() async {
+    LoggerService.d(_tag, 'getStoreStats');
     final response = await _dio.get(ApiConfig.storeStats);
     return DashboardStats.fromJson(response.data);
   }
 
   /// Fetch featured / popular apps.
   Future<List<StoreApp>> getFeaturedApps() async {
+    LoggerService.d(_tag, 'getFeaturedApps');
     final response = await _dio.get(ApiConfig.storeFeatured);
     final List<dynamic> data = response.data;
     return data.map((j) => StoreApp.fromJson(j)).toList();

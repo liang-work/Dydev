@@ -3,29 +3,42 @@ import 'package:path/path.dart';
 import '../models/user.dart';
 import '../models/store_app.dart';
 import '../models/dashboard_stats.dart';
+import 'logger_service.dart';
 
 /// SQLite database service for local data persistence.
 ///
 /// Caches dashboard stats, user profile, and app list so the UI
 /// can render immediately even when offline.
+///
+/// IMPORTANT: On desktop platforms (Windows / Linux / macOS) you must
+/// initialise the FFI database factory in [main] before any DB call:
+/// ```dart
+/// sqfliteFfiInit();
+/// databaseFactory = databaseFactoryFfi;
+/// ```
 class DatabaseService {
+  static const _tag = 'DatabaseService';
   static Database? _db;
 
   /// Open (or create) the local database.
   static Future<Database> get database async {
     if (_db != null) return _db!;
+    LoggerService.i(_tag, 'Initialising database ...');
     _db = await _init();
+    LoggerService.i(_tag, 'Database ready');
     return _db!;
   }
 
   static Future<Database> _init() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'dydev.db');
+    LoggerService.d(_tag, 'Database path: $path');
 
     return openDatabase(
       path,
       version: 1,
       onCreate: (db, version) async {
+        LoggerService.i(_tag, 'Creating database tables (v$version)');
         await db.execute('''
           CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
@@ -76,6 +89,7 @@ class DatabaseService {
 
   /// Persist the current user profile.
   static Future<void> saveUser(User user) async {
+    LoggerService.d(_tag, 'saveUser(${user.username})');
     final db = await database;
     await db.insert('users', user.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
@@ -83,14 +97,18 @@ class DatabaseService {
 
   /// Load the cached user profile, or null if none.
   static Future<User?> getUser() async {
+    LoggerService.d(_tag, 'getUser');
     final db = await database;
     final rows = await db.query('users', limit: 1);
     if (rows.isEmpty) return null;
-    return User.fromJson(rows.first);
+    final user = User.fromJson(rows.first);
+    LoggerService.d(_tag, 'Loaded cached user: ${user.username}');
+    return user;
   }
 
   /// Remove the cached user (used on logout).
   static Future<void> clearUser() async {
+    LoggerService.d(_tag, 'clearUser');
     final db = await database;
     await db.delete('users');
   }
@@ -99,6 +117,7 @@ class DatabaseService {
 
   /// Persist a list of store apps (replaces all existing rows).
   static Future<void> saveStoreApps(List<StoreApp> apps) async {
+    LoggerService.d(_tag, 'saveStoreApps(count=${apps.length})');
     final db = await database;
     await db.transaction((txn) async {
       await txn.delete('store_apps');
@@ -111,8 +130,10 @@ class DatabaseService {
 
   /// Load all cached store apps.
   static Future<List<StoreApp>> getStoreApps() async {
+    LoggerService.d(_tag, 'getStoreApps');
     final db = await database;
     final rows = await db.query('store_apps', orderBy: 'id DESC');
+    LoggerService.d(_tag, 'Loaded ${rows.length} cached apps');
     return rows.map((r) => StoreApp.fromJson(r)).toList();
   }
 
@@ -120,6 +141,7 @@ class DatabaseService {
 
   /// Persist dashboard stats (single row, id=1).
   static Future<void> saveStats(DashboardStats stats) async {
+    LoggerService.d(_tag, 'saveStats');
     final db = await database;
     await db.insert('dashboard_stats', stats.toJson(),
         conflictAlgorithm: ConflictAlgorithm.replace);
@@ -127,14 +149,19 @@ class DatabaseService {
 
   /// Load cached dashboard stats, or default zeroed instance.
   static Future<DashboardStats> getStats() async {
+    LoggerService.d(_tag, 'getStats');
     final db = await database;
     final rows = await db.query('dashboard_stats', where: 'id = 1');
-    if (rows.isEmpty) return DashboardStats();
+    if (rows.isEmpty) {
+      LoggerService.d(_tag, 'No cached stats, returning defaults');
+      return DashboardStats();
+    }
     return DashboardStats.fromJson(rows.first);
   }
 
   /// Clear all cached data.
   static Future<void> clearAll() async {
+    LoggerService.i(_tag, 'Clearing all cached data');
     final db = await database;
     await db.delete('users');
     await db.delete('store_apps');

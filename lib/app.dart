@@ -11,55 +11,63 @@ import 'pages/settings/profile_page.dart';
 ///
 /// Sets up go_router with an auth redirect guard and a Material Design 3
 /// theme that mirrors the reference frontend's shadcn/ui colour palette.
+///
+/// The router is rebuilt when [AuthProvider] notifies listeners, which
+/// ensures the redirect guard re-evaluates after login / logout.
 class DevPlatformApp extends StatelessWidget {
-  DevPlatformApp({super.key});
+  const DevPlatformApp({super.key});
 
-  final _router = GoRouter(
-    initialLocation: '/login',
-    redirect: (context, state) {
-      final auth = context.read<AuthProvider>();
-      final isLoggedIn = auth.isAuthenticated;
-      final isLoginRoute = state.matchedLocation == '/login';
+  @override
+  Widget build(BuildContext context) {
+    // Watch the auth provider so the entire widget (including the router)
+    // rebuilds whenever authentication state changes.
+    final auth = context.watch<AuthProvider>();
 
-      // Unauthenticated users are sent to /login.
-      if (!isLoggedIn && !isLoginRoute) return '/login';
-      // Authenticated users on /login are sent to /dashboard.
-      if (isLoggedIn && isLoginRoute) return '/dashboard';
-      return null;
-    },
-    routes: [
-      GoRoute(
-        path: '/login',
-        name: 'login',
+    final router = GoRouter(
+      refreshListenable: auth,
+      initialLocation: '/login',
+      redirect: (ctx, state) {
+        final a = ctx.read<AuthProvider>();
+        final isLoggedIn = a.isAuthenticated;
+        final isLoginRoute = state.matchedLocation == '/login';
+
+        // Unauthenticated users are sent to /login.
+        if (!isLoggedIn && !isLoginRoute) return '/login';
+        // Authenticated users on /login are sent to /dashboard.
+        if (isLoggedIn && isLoginRoute) return '/dashboard';
+        return null;
+      },
+      routes: [
+        GoRoute(
+          path: '/login',
+          name: 'login',
           builder: (_, _) => const LoginPage(),
         ),
         ShellRoute(
           builder: (_, _, child) => DashboardLayout(child: child),
-        routes: [
-          GoRoute(
-            path: '/dashboard',
-            name: 'dashboard',
-            builder: (_, _) => const DashboardPage(),
-          ),
-          GoRoute(
-            path: '/dashboard/settings',
-            name: 'settings',
-            builder: (_, _) => const ProfilePage(),
-          ),
-        ],
-      ),
-    ],
-  );
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              name: 'dashboard',
+              builder: (_, _) => const DashboardPage(),
+            ),
+            GoRoute(
+              path: '/dashboard/settings',
+              name: 'settings',
+              builder: (_, _) => const ProfilePage(),
+            ),
+          ],
+        ),
+      ],
+    );
 
-  @override
-  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '开发者平台',
       debugShowCheckedModeBanner: false,
-      routerConfig: _router,
+      routerConfig: router,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6366F1), // Indigo – matches the reference.
+        colorSchemeSeed: const Color(0xFF6366F1),
         scaffoldBackgroundColor: Colors.grey.shade50,
         appBarTheme: AppBarTheme(
           elevation: 0,

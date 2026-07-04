@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -34,15 +35,20 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error ?? 'Login failed'),
-          backgroundColor: Colors.red.shade400,
-        ),
-      );
+    if (success) {
+      // Navigate to dashboard after successful login.
+      if (!mounted) return;
+      context.go('/dashboard');
+      return;
     }
-    // On success the go_router redirect guard will navigate to /dashboard.
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(auth.error ?? 'Login failed'),
+        backgroundColor: Colors.red.shade400,
+      ),
+    );
   }
 
   @override
