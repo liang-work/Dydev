@@ -4,6 +4,7 @@ import '../../models/software.dart';
 import '../../models/version.dart';
 import '../../models/channel.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class VersionListPage extends StatefulWidget {
   final String softwareId;
@@ -74,7 +75,10 @@ class _VersionListPageState extends State<VersionListPage> {
       _software = results[0] as Software;
       _versions = results[1] as List<Version>;
       _channels = results[2] as List<Channel>;
-    } catch (_) {}
+      LoggerService.d('VersionList', 'loaded software=${_software?.name}, versions=${_versions.length}, channels=${_channels.length}');
+    } catch (e, s) {
+      LoggerService.e('_VersionListPageState', 'load versions', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

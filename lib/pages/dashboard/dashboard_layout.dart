@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -84,15 +85,16 @@ class DashboardLayout extends StatelessWidget {
   }
 
   static String _pageTitleFor(String path) {
-    if (path == '/dashboard') return '仪表板';
-    if (path.startsWith('/dashboard/notifications')) return '通知中心';
-    if (path.startsWith('/dashboard/storages')) return '存储管理';
-    if (path.startsWith('/dashboard/softwares')) return '软件分发';
-    if (path.startsWith('/dashboard/versions')) return '版本管理';
-    if (path.startsWith('/dashboard/announcements')) return '公告管理';
-    if (path.startsWith('/dashboard/telemetry')) return '软件遥测';
-    if (path.startsWith('/dashboard/config')) return '云端配置';
-    if (path.startsWith('/dashboard/settings')) return '个人设置';
-    return '仪表板';
+    if (path == '/dashboard') return 'app_bar.dashboard'.tr();
+    if (path.startsWith('/dashboard/notifications')) return 'app_bar.notifications'.tr();
+    if (path.startsWith('/dashboard/storages')) return 'app_bar.storages'.tr();
+    if (path.startsWith('/dashboard/softwares')) return 'app_bar.softwares'.tr();
+    if (path.startsWith('/dashboard/versions')) return 'app_bar.versions'.tr();
+    if (path.startsWith('/dashboard/announcements')) return 'app_bar.announcements'.tr();
+    if (path.startsWith('/dashboard/telemetry')) return 'app_bar.telemetry'.tr();
+    if (path.startsWith('/dashboard/config')) return 'app_bar.config'.tr();
+    if (path.startsWith('/dashboard/apps')) return 'app_bar.apps'.tr();
+    if (path.startsWith('/dashboard/settings')) return 'app_bar.settings'.tr();
+    return 'app_bar.dashboard'.tr();
   }
 }

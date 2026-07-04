@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/storage_backend.dart';
 import '../../models/storage_file.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class StorageDetailPage extends StatefulWidget {
   final String storageId;
@@ -83,7 +84,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
       _editNameCtrl.text = _storage!.name;
       _editLinkType = _storage!.defaultLinkType;
       _editCdnCtrl.text = _storage!.cdnDomain ?? '';
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_StorageDetailPageState', 'load storage', e, s);
+    }
     if (mounted) setState(() => _loadingStorage = false);
   }
 
@@ -92,7 +95,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _files = await api.getStorageFiles(widget.storageId, prefix: _currentPath);
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_StorageDetailPageState', 'load files', e, s);
+    }
     if (mounted) setState(() => _loadingFiles = false);
   }
 

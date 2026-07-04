@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/config_item.dart';
 import '../../models/software.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class ConfigListPage extends StatefulWidget {
   const ConfigListPage({super.key});
@@ -49,7 +50,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
         _selectedSoftwareId = _softwares.first.id;
         _loadItems();
       }
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_ConfigListPageState', 'load softwares', e, s);
+    }
   }
 
   Future<void> _loadItems() async {
@@ -58,7 +61,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _items = await api.getConfigItems(softwareId: _selectedSoftwareId!);
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_ConfigListPageState', 'load config items', e, s);
+    }
     if (mounted) setState(() => _loadingItems = false);
   }
 

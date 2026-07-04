@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -14,7 +15,7 @@ import 'services/logger_service.dart';
 /// Defined here so all other modules reference [ApiConfig.baseUrl].
 const String kApiBaseUrl = 'https://dev-api.dy.ci/';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // ---- Initialise database backend ----
@@ -30,18 +31,27 @@ void main() {
   // Set to LogLevel.warning for release builds.
   LoggerService.level = LogLevel.debug;
 
+  // ---- Initialise EasyLocalization ----
+  await EasyLocalization.ensureInitialized();
+
   final authService = AuthService();
 
   // Compose the provider tree with both auth and dashboard providers.
   // DashboardProvider depends on ApiService which comes from AuthProvider.
   runApp(
-    ChangeNotifierProvider<AuthProvider>(
-      create: (_) => AuthProvider(authService: authService)..init(),
-      child: ChangeNotifierProvider<DashboardProvider>(
-        create: (context) => DashboardProvider(
-          apiService: context.read<AuthProvider>().apiService,
+    EasyLocalization(
+      supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+      path: 'assets/locales',
+      fallbackLocale: const Locale('zh', 'CN'),
+      startLocale: const Locale('zh', 'CN'),
+      child: ChangeNotifierProvider<AuthProvider>(
+        create: (_) => AuthProvider(authService: authService)..init(),
+        child: ChangeNotifierProvider<DashboardProvider>(
+          create: (context) => DashboardProvider(
+            apiService: context.read<AuthProvider>().apiService,
+          ),
+          child: const DevPlatformApp(),
         ),
-        child: const DevPlatformApp(),
       ),
     ),
   );

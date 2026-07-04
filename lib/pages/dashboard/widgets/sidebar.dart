@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -118,7 +119,7 @@ class Sidebar extends StatelessWidget {
                 Icon(Icons.code, size: 20, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  '开发者平台',
+                  'app.title'.tr(),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
@@ -131,58 +132,64 @@ class Sidebar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
                 // === 概览 ===
-                const _GroupHeader(label: '概览'),
+                _GroupHeader(label: 'nav.overview'.tr()),
                 _NavItem(
                   icon: Icons.dashboard_outlined,
-                  label: '仪表板',
+                  label: 'nav.dashboard'.tr(),
                   isSelected: currentRoute == '/dashboard',
                   onTap: () => onNavigate('/dashboard'),
                 ),
                 _NavItem(
                   icon: Icons.notifications_outlined,
-                  label: '通知中心',
+                  label: 'nav.notifications'.tr(),
                   isSelected: currentRoute == '/dashboard/notifications',
                   onTap: () => onNavigate('/dashboard/notifications'),
                 ),
+                _NavItem(
+                  icon: Icons.store_outlined,
+                  label: 'nav.apps'.tr(),
+                  isSelected: currentRoute.startsWith('/dashboard/apps'),
+                  onTap: () => onNavigate('/dashboard/apps'),
+                ),
 
                 // === 分发管理 ===
-                const _GroupHeader(label: '分发管理'),
+                _GroupHeader(label: 'nav.distribution'.tr()),
                 _NavItem(
                   icon: Icons.storage_outlined,
-                  label: '存储管理',
+                  label: 'nav.storages'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/storages'),
                   onTap: () => onNavigate('/dashboard/storages'),
                 ),
                 _NavItem(
                   icon: Icons.inventory_2_outlined,
-                  label: '软件分发',
+                  label: 'nav.softwares'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/softwares'),
                   onTap: () => onNavigate('/dashboard/softwares'),
                 ),
                 _NavItem(
                   icon: Icons.layers_outlined,
-                  label: '版本管理',
+                  label: 'nav.versions'.tr(),
                   isSelected: currentRoute.contains('/versions'),
                   onTap: () => onNavigate('/dashboard/softwares'),
                 ),
                 _NavItem(
                   icon: Icons.campaign_outlined,
-                  label: '公告管理',
+                  label: 'nav.announcements'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/announcements'),
                   onTap: () => onNavigate('/dashboard/announcements'),
                 ),
 
                 // === 数据与配置 ===
-                const _GroupHeader(label: '数据与配置'),
+                _GroupHeader(label: 'nav.data_config'.tr()),
                 _NavItem(
                   icon: Icons.analytics_outlined,
-                  label: '软件遥测',
+                  label: 'nav.telemetry'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/telemetry'),
                   onTap: () => onNavigate('/dashboard/telemetry'),
                 ),
                 _NavItem(
                   icon: Icons.tune_outlined,
-                  label: '云端配置',
+                  label: 'nav.config'.tr(),
                   isSelected: currentRoute.startsWith('/dashboard/config'),
                   onTap: () => onNavigate('/dashboard/config'),
                 ),
@@ -242,7 +249,7 @@ class Sidebar extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.logout, size: 18, color: Colors.grey.shade500),
                   onPressed: onLogout,
-                  tooltip: '退出登录',
+                  tooltip: 'sidebar.logout.tooltip'.tr(),
                   visualDensity: VisualDensity.compact,
                 ),
               ],

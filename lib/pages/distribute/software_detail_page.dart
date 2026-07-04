@@ -6,6 +6,7 @@ import '../../models/software.dart';
 import '../../models/channel.dart';
 import '../../models/software_member.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class SoftwareDetailPage extends StatefulWidget {
   final String softwareId;
@@ -77,7 +78,9 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       _editSlugCtrl.text = _software!.slug;
       _editDescCtrl.text = _software!.description;
       _editPlatforms = [..._software!.platforms];
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_SoftwareDetailPageState', 'load software detail', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

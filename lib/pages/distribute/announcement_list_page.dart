@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/software.dart';
 import '../../models/announcement.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class AnnouncementListPage extends StatefulWidget {
   const AnnouncementListPage({super.key});
@@ -52,7 +53,10 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _softwares = await api.getSoftwares();
-    } catch (_) {}
+      LoggerService.d('AnnouncementList', 'loaded ${_softwares.length} softwares');
+    } catch (e, s) {
+      LoggerService.e('_AnnouncementListPageState', 'load softwares', e, s);
+    }
     if (mounted) setState(() => _loadingSoftwares = false);
   }
 
@@ -71,7 +75,9 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _announcements = await api.getAnnouncements(_selectedId!);
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_AnnouncementListPageState', 'load announcements', e, s);
+    }
     if (mounted) setState(() => _loadingAnnouncements = false);
   }
 
@@ -82,7 +88,9 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
       final api = context.read<AuthProvider>().apiService;
       final chs = await api.getChannels(_selectedId);
       _channels = chs.map((c) => c.channelType).toList();
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_AnnouncementListPageState', 'load channels', e, s);
+    }
     if (mounted) setState(() => _loadingChannels = false);
   }
 

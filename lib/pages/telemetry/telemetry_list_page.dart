@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/software.dart';
 import '../../models/telemetry_data.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class TelemetryListPage extends StatefulWidget {
   const TelemetryListPage({super.key});
@@ -78,7 +79,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
     try {
       final api = context.read<AuthProvider>().apiService;
       _softwares = await api.getSoftwares();
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'load softwares', e, s);
+    }
     if (mounted) setState(() {});
   }
 
@@ -95,7 +98,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
       if (_filterSoftware != 'all' && (_availableVersions.isEmpty || _availableEnvironments.isEmpty)) {
         _updateFilterOptions();
       }
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'load telemetry data', e, s);
+    }
     if (mounted) setState(() => _loadingData = false);
   }
 
@@ -105,7 +110,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
       final allData = await api.getTelemetryData(params: {'software': _filterSoftware, 'limit': 1000});
       _availableVersions = allData.map((d) => d.version).where((v) => v.isNotEmpty).toSet().toList()..sort();
       _availableEnvironments = allData.map((d) => d.environment).where((e) => e.isNotEmpty).toSet().toList()..sort();
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'update filter options', e, s);
+    }
     if (mounted) setState(() {});
   }
 
@@ -120,7 +127,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
       final api = context.read<AuthProvider>().apiService;
       _stats = await api.getTelemetryStats(_filterSoftware, params: params);
       _definitions = await api.getMetricDefinitions(params: {'software': _filterSoftware});
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'load stats', e, s);
+    }
     if (mounted) setState(() => _loadingStats = false);
   }
 
@@ -130,7 +139,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
     try {
       final api = context.read<AuthProvider>().apiService;
       _issues = await api.getIssues(params: {'software': _filterSoftware});
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'load issues', e, s);
+    }
     if (mounted) setState(() => _loadingIssues = false);
   }
 
@@ -142,7 +153,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
     try {
       final api = context.read<AuthProvider>().apiService;
       _issueLogs = await api.getIssueLogs(issue['id'] as int);
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_TelemetryListPageState', 'load issue logs', e, s);
+    }
     if (mounted) setState(() => _loadingIssueLogs = false);
   }
 

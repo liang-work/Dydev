@@ -25,6 +25,15 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final active = json['is_active'];
+    final bool isActive;
+    if (active is bool) {
+      isActive = active;
+    } else if (active is int) {
+      isActive = active == 1;
+    } else {
+      isActive = true;
+    }
     return User(
       id: json['id'] ?? 0,
       username: json['username'] ?? '',
@@ -35,7 +44,7 @@ class User {
       phone: json['phone'] ?? '',
       dateJoined: json['date_joined'] as String? ?? '',
       lastLogin: json['last_login'] as String? ?? '',
-      isActive: json['is_active'] as bool? ?? true,
+      isActive: isActive,
     );
   }
 

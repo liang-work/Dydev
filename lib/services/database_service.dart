@@ -1,3 +1,5 @@
+import 'dart:io' as io;
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/user.dart';
@@ -25,8 +27,63 @@ class DatabaseService {
     if (_db != null) return _db!;
     LoggerService.i(_tag, 'Initialising database ...');
     _db = await _init();
-    LoggerService.i(_tag, 'Database ready');
+    LoggerService.d(_tag, 'Database ready');
     return _db!;
+  }
+
+  static Future<void> _createTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        username TEXT NOT NULL,
+        nickname TEXT,
+        avatar TEXT,
+        bio TEXT,
+        email TEXT,
+        phone TEXT,
+        date_joined TEXT DEFAULT '',
+        last_login TEXT DEFAULT '',
+        is_active INTEGER DEFAULT 1
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS store_apps (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        slug TEXT,
+        icon_url TEXT,
+        current_version TEXT,
+        status TEXT,
+        download_count INTEGER DEFAULT 0,
+        view_count INTEGER DEFAULT 0,
+        rating_average REAL DEFAULT 0,
+        rating_count INTEGER DEFAULT 0,
+        review_count INTEGER DEFAULT 0,
+        short_description TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS dashboard_stats (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        my_app_count INTEGER DEFAULT 0,
+        total_downloads INTEGER DEFAULT 0,
+        total_reviews INTEGER DEFAULT 0,
+        published_app_count INTEGER DEFAULT 0
+      )
+    ''');
+  }
+
+  /// Convert Dart bool → int (1/0) recursively in a map for sqflite compatibility.
+  static Map<String, dynamic> _toDbMap(Map<String, dynamic> map) {
+    return map.map((String k, dynamic v) {
+      if (v is bool) return MapEntry<String, dynamic>(k, v ? 1 : 0);
+      if (v is Map) return MapEntry<String, dynamic>(k, _toDbMap(v.cast<String, dynamic>()));
+      return MapEntry<String, dynamic>(k, v);
+    });
   }
 
   static Future<Database> _init() async {
@@ -34,51 +91,21 @@ class DatabaseService {
     final path = join(dbPath, 'dydev.db');
     LoggerService.d(_tag, 'Database path: $path');
 
+    // Delete stale database files (including WAL/SHM) to ensure fresh schema.
+    for (final suffix in ['', '-wal', '-shm']) {
+      final f = io.File('$path$suffix');
+      if (await f.exists()) {
+        await f.delete();
+        LoggerService.d(_tag, 'Removed stale DB file: $path$suffix');
+      }
+    }
+
     return openDatabase(
       path,
       version: 1,
       onCreate: (db, version) async {
         LoggerService.i(_tag, 'Creating database tables (v$version)');
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            username TEXT NOT NULL,
-            nickname TEXT,
-            avatar TEXT,
-            bio TEXT,
-            email TEXT,
-            phone TEXT
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS store_apps (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            slug TEXT,
-            icon_url TEXT,
-            current_version TEXT,
-            status TEXT,
-            download_count INTEGER DEFAULT 0,
-            view_count INTEGER DEFAULT 0,
-            rating_average REAL DEFAULT 0,
-            rating_count INTEGER DEFAULT 0,
-            review_count INTEGER DEFAULT 0,
-            short_description TEXT,
-            created_at TEXT,
-            updated_at TEXT
-          )
-        ''');
-
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS dashboard_stats (
-            id INTEGER PRIMARY KEY DEFAULT 1,
-            my_app_count INTEGER DEFAULT 0,
-            total_downloads INTEGER DEFAULT 0,
-            total_reviews INTEGER DEFAULT 0,
-            published_app_count INTEGER DEFAULT 0
-          )
-        ''');
+        await _createTables(db);
       },
     );
   }
@@ -89,7 +116,7 @@ class DatabaseService {
   static Future<void> saveUser(User user) async {
     LoggerService.d(_tag, 'saveUser(${user.username})');
     final db = await database;
-    await db.insert('users', user.toJson(),
+    await db.insert('users', _toDbMap(user.toJson()),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -120,7 +147,7 @@ class DatabaseService {
     await db.transaction((txn) async {
       await txn.delete('store_apps');
       for (final app in apps) {
-        await txn.insert('store_apps', app.toJson(),
+        await txn.insert('store_apps', _toDbMap(app.toJson()),
             conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });
@@ -141,7 +168,7 @@ class DatabaseService {
   static Future<void> saveStats(DashboardStats stats) async {
     LoggerService.d(_tag, 'saveStats');
     final db = await database;
-    await db.insert('dashboard_stats', stats.toJson(),
+    await db.insert('dashboard_stats', _toDbMap(stats.toJson()),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 

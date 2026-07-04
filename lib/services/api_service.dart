@@ -83,6 +83,26 @@ class ApiService {
     ));
   }
 
+  /// Unwrap a DRF paginated or non-paginated list response.
+  List _unwrapList(dynamic data) {
+    if (data is List) {
+      LoggerService.d(_tag, '_unwrapList: raw list count=${data.length}');
+      return data;
+    }
+    if (data is Map && data['results'] is List) {
+      final list = data['results'] as List;
+      LoggerService.d(_tag, '_unwrapList: results count=${list.length}');
+      return list;
+    }
+    if (data is Map && data['data'] is List) return data['data'] as List;
+    LoggerService.w(_tag, 'Unexpected API response format: ${data.runtimeType}');
+    if (data is Map) {
+      final keys = data.keys.join(', ');
+      LoggerService.w(_tag, '  Map keys: $keys');
+    }
+    return [];
+  }
+
   // ---- Auth ----
   Future<User> validateToken(String token) async {
     final response = await Dio(BaseOptions(baseUrl: ApiConfig.baseUrl)).get(
@@ -105,13 +125,40 @@ class ApiService {
   // ---- Store ----
   Future<List<StoreApp>> getMyApps() async {
     final response = await _dio.get(ApiConfig.storeMyApps);
-    return (response.data as List).map((j) => StoreApp.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => StoreApp.fromJson(j)).toList();
+  }
+
+  Future<List<StoreApp>> getStoreApps() async {
+    final response = await _dio.get(ApiConfig.storeApps);
+    return _unwrapList(response.data).map((j) => StoreApp.fromJson(j)).toList();
+  }
+
+  Future<StoreApp> createStoreApp(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.storeApps, data: data);
+    return StoreApp.fromJson(response.data);
+  }
+
+  Future<StoreApp> updateStoreApp(Object id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.storeApps, id), data: data);
+    return StoreApp.fromJson(response.data);
+  }
+
+  Future<void> deleteStoreApp(Object id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.storeApps, id));
+  }
+
+  Future<void> publishStoreApp(Object id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.storeApps, id, 'publish'));
+  }
+
+  Future<void> unpublishStoreApp(Object id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.storeApps, id, 'unpublish'));
   }
 
   // ---- Notifications ----
   Future<List<NotificationModel>> getNotifications() async {
     final response = await _dio.get(ApiConfig.notifications);
-    return (response.data as List).map((j) => NotificationModel.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => NotificationModel.fromJson(j)).toList();
   }
 
   Future<void> markNotificationRead(int id) async {
@@ -129,7 +176,7 @@ class ApiService {
   // ---- Softwares ----
   Future<List<Software>> getSoftwares() async {
     final response = await _dio.get(ApiConfig.softwares);
-    return (response.data as List).map((j) => Software.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => Software.fromJson(j)).toList();
   }
 
   Future<Software> getSoftware(String id) async {
@@ -174,7 +221,7 @@ class ApiService {
   // ---- Members ----
   Future<List<SoftwareMember>> getMembers(String softwareId) async {
     final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'members'));
-    return (response.data as List).map((j) => SoftwareMember.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => SoftwareMember.fromJson(j)).toList();
   }
 
   Future<void> addMember(String softwareId, Map<String, dynamic> data) async {
@@ -189,7 +236,7 @@ class ApiService {
   Future<List<Channel>> getChannels([String? softwareId]) async {
     final params = softwareId != null ? {'software': softwareId} : null;
     final response = await _dio.get(ApiConfig.channels, queryParameters: params);
-    return (response.data as List).map((j) => Channel.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => Channel.fromJson(j)).toList();
   }
 
   Future<Channel> createChannel(Map<String, dynamic> data) async {
@@ -209,7 +256,7 @@ class ApiService {
   // ---- Versions ----
   Future<List<Version>> getVersions(String softwareId) async {
     final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.softwares, softwareId, 'versions'));
-    return (response.data as List).map((j) => Version.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => Version.fromJson(j)).toList();
   }
 
   Future<Version> createVersion(Map<String, dynamic> data) async {
@@ -241,7 +288,7 @@ class ApiService {
   // ---- Storages ----
   Future<List<StorageBackend>> getStorages() async {
     final response = await _dio.get(ApiConfig.storages);
-    return (response.data as List).map((j) => StorageBackend.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => StorageBackend.fromJson(j)).toList();
   }
 
   Future<StorageBackend> getStorage(String id) async {
@@ -330,7 +377,7 @@ class ApiService {
       ApiConfig.announcements,
       queryParameters: {'software': softwareId},
     );
-    return (response.data as List).map((j) => Announcement.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => Announcement.fromJson(j)).toList();
   }
 
   Future<Announcement> createAnnouncement(Map<String, dynamic> data) async {
@@ -355,7 +402,7 @@ class ApiService {
   // ---- Telemetry ----
   Future<List<TelemetryData>> getTelemetryData({Map<String, dynamic>? params}) async {
     final response = await _dio.get(ApiConfig.telemetryData, queryParameters: params);
-    return (response.data as List).map((j) => TelemetryData.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => TelemetryData.fromJson(j)).toList();
   }
 
   Future<void> deleteTelemetryData(int id) async {
@@ -375,7 +422,7 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getMetricDefinitions({Map<String, dynamic>? params}) async {
     final response = await _dio.get(ApiConfig.telemetryDefinitions, queryParameters: params);
-    return (response.data as List).cast<Map<String, dynamic>>();
+    return _unwrapList(response.data).cast<Map<String, dynamic>>();
   }
 
   Future<void> createMetricDefinition(Map<String, dynamic> data) async {
@@ -392,7 +439,7 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getIssues({Map<String, dynamic>? params}) async {
     final response = await _dio.get(ApiConfig.telemetryIssues, queryParameters: params);
-    return (response.data as List).cast<Map<String, dynamic>>();
+    return _unwrapList(response.data).cast<Map<String, dynamic>>();
   }
 
   Future<void> updateIssue(int id, Map<String, dynamic> data) async {
@@ -401,7 +448,7 @@ class ApiService {
 
   Future<List<TelemetryData>> getIssueLogs(int issueId) async {
     final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.telemetryIssues, issueId, 'logs'));
-    return (response.data as List).map((j) => TelemetryData.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => TelemetryData.fromJson(j)).toList();
   }
 
   // ---- Config Items ----
@@ -410,7 +457,7 @@ class ApiService {
       ApiConfig.configItems,
       queryParameters: {'software': softwareId},
     );
-    return (response.data as List).map((j) => ConfigItem.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => ConfigItem.fromJson(j)).toList();
   }
 
   Future<ConfigItem> createConfigItem(Map<String, dynamic> data) async {
@@ -448,7 +495,7 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getGithubRepos() async {
     final response = await _dio.get(ApiConfig.githubRepos);
-    return (response.data as List).cast<Map<String, dynamic>>();
+    return _unwrapList(response.data).cast<Map<String, dynamic>>();
   }
 
   Future<List<Map<String, dynamic>>> getGithubReleases(String repo) async {
@@ -456,12 +503,12 @@ class ApiService {
       ApiConfig.githubReleases,
       queryParameters: {'repo': repo},
     );
-    return (response.data as List).cast<Map<String, dynamic>>();
+    return _unwrapList(response.data).cast<Map<String, dynamic>>();
   }
 
   Future<List<GitHubMirror>> getGithubMirrors() async {
     final response = await _dio.get(ApiConfig.githubMirrors);
-    return (response.data as List).map((j) => GitHubMirror.fromJson(j)).toList();
+    return _unwrapList(response.data).map((j) => GitHubMirror.fromJson(j)).toList();
   }
 
   Future<void> createGithubMirror(Map<String, dynamic> data) async {

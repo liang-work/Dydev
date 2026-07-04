@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/storage_backend.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class StorageListPage extends StatefulWidget {
   const StorageListPage({super.key});
@@ -65,7 +66,9 @@ class _StorageListPageState extends State<StorageListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _storages = await api.getStorages();
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_StorageListPageState', 'load storages', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 

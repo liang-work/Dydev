@@ -3,6 +3,7 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
+import '../services/logger_service.dart';
 
 /// Authentication state.
 enum AuthStatus { uninitialized, authenticated, unauthenticated }
@@ -48,7 +49,8 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = await DatabaseService.getUser();
       _status = AuthStatus.authenticated;
-    } catch (_) {
+    } catch (e, s) {
+      LoggerService.e('AuthProvider', 'init failed to load cached user', e, s);
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
@@ -68,7 +70,8 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
-    } catch (e) {
+    } catch (e, s) {
+      LoggerService.e('AuthProvider', 'Token validation failed', e, s);
       _error = 'Token validation failed: ${e.toString()}';
       notifyListeners();
       return false;

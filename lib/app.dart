@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import 'pages/distribute/software_list_page.dart';
 import 'pages/distribute/software_detail_page.dart';
 import 'pages/distribute/version_list_page.dart';
 import 'pages/distribute/announcement_list_page.dart';
+import 'pages/store/app_list_page.dart';
 import 'pages/telemetry/telemetry_list_page.dart';
 import 'pages/config/config_list_page.dart';
 import 'pages/settings/profile_page.dart';
@@ -65,6 +67,7 @@ class DevPlatformApp extends StatelessWidget {
             GoRoute(path: '/dashboard/versions', name: 'versions_redirect', redirect: (_, _) => '/dashboard/softwares'),
             GoRoute(path: '/dashboard/announcements', name: 'announcements', builder: (_, _) => const AnnouncementListPage()),
             GoRoute(path: '/dashboard/telemetry', name: 'telemetry', builder: (_, _) => const TelemetryListPage()),
+            GoRoute(path: '/dashboard/apps', name: 'apps', builder: (_, _) => const AppListPage()),
             GoRoute(path: '/dashboard/config', name: 'config', builder: (_, _) => const ConfigListPage()),
             GoRoute(path: '/dashboard/settings', name: 'settings', builder: (_, _) => const ProfilePage()),
           ],
@@ -73,9 +76,12 @@ class DevPlatformApp extends StatelessWidget {
     );
 
     return MaterialApp.router(
-      title: '开发者平台',
+      title: 'app.title'.tr(),
       debugShowCheckedModeBanner: false,
       routerConfig: router,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF6366F1),

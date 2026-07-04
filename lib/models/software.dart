@@ -50,7 +50,7 @@ class Software {
         updateToken: json['update_token'] as String?,
         versionCount: json['version_count'] as int? ?? 0,
         role: json['role'] as String? ?? 'viewer',
-        owner: json['owner'] as String?,
+        owner: json['owner']?.toString(),
         createdAt: json['created_at'] as String? ?? '',
       );
 

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/github_account.dart';
@@ -273,6 +274,33 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 16),
+            // Language setting
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('settings.language'.tr(), style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text('settings.language.description'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<Locale>(
+                      value: context.locale,
+                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: Locale('zh', 'CN'), child: Text('中文')),
+                        DropdownMenuItem(value: Locale('en', 'US'), child: Text('English')),
+                      ],
+                      onChanged: (locale) {
+                        if (locale != null) context.setLocale(locale);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             // Profile edit
             Card(
               child: Padding(
@@ -280,9 +308,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('个人信息', style: theme.textTheme.titleMedium),
+                    Text('settings.profile'.tr(), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text('更新您的个人资料', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text('settings.profile.description'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                     const SizedBox(height: 20),
                     TextField(controller: TextEditingController(text: user?.username ?? ''), decoration: const InputDecoration(labelText: '用户名', border: OutlineInputBorder()), enabled: false),
                     const SizedBox(height: 12),

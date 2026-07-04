@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/software.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class SoftwareListPage extends StatefulWidget {
   const SoftwareListPage({super.key});
@@ -49,7 +50,10 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _softwares = await api.getSoftwares();
-    } catch (_) {}
+      LoggerService.d('SoftwareList', 'loaded ${_softwares.length} softwares');
+    } catch (e, s) {
+      LoggerService.e('_SoftwareListPageState', 'load softwares', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -226,13 +230,15 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                                       PopupMenuButton<String>(
                                         onSelected: (v) {
                                           if (v == 'edit') _openEdit(sw);
+                                          if (v == 'versions') context.push('/dashboard/softwares/${sw.id}/versions');
                                           if (v == 'token') _resetToken(sw.id);
                                           if (v == 'delete') _delete(sw.id);
                                         },
                                         itemBuilder: (_) => [
-                                          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-                                          const PopupMenuItem(value: 'token', child: Text('重置 Token')),
-                                          const PopupMenuItem(value: 'delete', child: Text('删除', style: TextStyle(color: Colors.red))),
+                                          const PopupMenuItem(value: 'edit', child: _MenuItemRow(Icons.edit_outlined, '编辑')),
+                                          const PopupMenuItem(value: 'versions', child: _MenuItemRow(Icons.call_split, '版本管理')),
+                                          const PopupMenuItem(value: 'token', child: _MenuItemRow(Icons.refresh_outlined, '重置 Token')),
+                                          const PopupMenuItem(value: 'delete', child: _MenuItemRow(Icons.delete_outline, '删除', isDestructive: true)),
                                         ],
                                       ),
                                     ],
@@ -352,6 +358,24 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MenuItemRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isDestructive;
+  const _MenuItemRow(this.icon, this.label, {this.isDestructive = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: isDestructive ? Colors.red : null),
+        const SizedBox(width: 8),
+        Text(label, style: isDestructive ? const TextStyle(color: Colors.red) : null),
+      ],
     );
   }
 }

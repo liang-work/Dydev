@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/notification.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/logger_service.dart';
 
 class NotificationCenterPage extends StatefulWidget {
   const NotificationCenterPage({super.key});
@@ -25,7 +26,9 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       _notifications = await api.getNotifications();
-    } catch (_) {}
+    } catch (e, s) {
+      LoggerService.e('_NotificationCenterPageState', 'load notifications', e, s);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -36,7 +39,9 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
     for (final n in _notifications.where((n) => !n.isRead)) {
       try {
         await api.markNotificationRead(n.id);
-      } catch (_) {}
+      } catch (e, s) {
+        LoggerService.e('_NotificationCenterPageState', 'mark all read', e, s);
+      }
     }
     _fetch();
   }
