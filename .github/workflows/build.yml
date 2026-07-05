@@ -25,11 +25,36 @@ jobs:
         run: flutter pub get
       - name: Build
         run: flutter build windows --release
+      - name: Create zip archive
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath dydev-windows.zip
+      - name: Build installer (Inno Setup)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $exe = "build\windows\x64\runner\Release\dydev.exe"
+          $ver = (Get-Item $exe).VersionInfo.FileVersion
+          $iss = @"
+          [Setup]
+          AppName=dydev
+          AppVersion=$ver
+          DefaultDirName={autopf}\dydev
+          DefaultGroupName=dydev
+          OutputDir=installer_output
+          OutputBaseFilename=dydev-setup-$ver
+          [Files]
+          Source: "$exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          "@
+          $iss | Out-File setup.iss -Encoding utf8
+          ISCC.exe setup.iss
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-Windows
-          path: build\windows\x64\runner\Release\
-          if-no-files-found: error
+          path: |
+            dydev-windows.zip
+            installer_output\*.exe
+          if-no-files-found: warn
 
   linux:
     if: contains(inputs.platforms, 'linux')
