@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../services/logger_service.dart';
+import '../utils/http_status.dart';
 
 /// Authentication state.
 enum AuthStatus { uninitialized, authenticated, unauthenticated }
@@ -23,7 +24,15 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider({required AuthService authService})
       : _authService = authService {
-    _apiService = ApiService(authService: authService);
+    _apiService = ApiService(
+      authService: authService,
+      onForceLogout: () {
+        logout();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showMessageDialog('登录过期', '登录过期，请重新登录');
+        });
+      },
+    );
   }
 
   // ---- Getters ----

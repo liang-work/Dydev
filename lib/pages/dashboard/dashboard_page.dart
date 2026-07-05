@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/dashboard_stats.dart';
@@ -41,6 +42,22 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             if (provider.isLoading && provider.myApps.isEmpty)
               const Center(child: CircularProgressIndicator())
+            else if (provider.error != null && provider.myApps.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(40),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                      const SizedBox(height: 12),
+                      Text(provider.error!, style: TextStyle(color: Colors.red.shade400), textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton.tonal(onPressed: () => provider.load(), child: Text('common.retry'.tr())),
+                    ],
+                  ),
+                ),
+              )
             else ...[
               // ---- Stats row ----
               _buildStatsRow(context, stats),

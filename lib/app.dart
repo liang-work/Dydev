@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'utils/global_keys.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard/dashboard_layout.dart';
 import 'pages/dashboard/dashboard_page.dart';
@@ -42,6 +43,7 @@ class DevPlatformApp extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
 
     final router = GoRouter(
+      navigatorKey: navigatorKey,
       refreshListenable: auth,
       initialLocation: '/login',
       redirect: (ctx, state) {

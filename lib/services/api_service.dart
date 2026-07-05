@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/store_app.dart';
@@ -14,6 +15,7 @@ import '../models/telemetry_data.dart';
 import '../models/config_item.dart';
 import '../models/github_account.dart';
 import '../models/gitea_account.dart';
+import '../utils/http_status.dart';
 import 'auth_service.dart';
 import 'logger_service.dart';
 
@@ -22,8 +24,11 @@ class ApiService {
 
   late final Dio _dio;
   final AuthService _authService;
+  final VoidCallback? _onForceLogout;
 
-  ApiService({required AuthService authService}) : _authService = authService {
+  ApiService({required AuthService authService, VoidCallback? onForceLogout})
+      : _authService = authService,
+        _onForceLogout = onForceLogout {
     LoggerService.d(_tag, 'Initialising API service (baseUrl: ${ApiConfig.baseUrl})');
 
     _dio = Dio(BaseOptions(
@@ -57,7 +62,8 @@ class ApiService {
         handler.next(options);
       },
       onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
+        final statusCode = error.response?.statusCode ?? 0;
+        if (statusCode == 401) {
           LoggerService.w(_tag, 'Got 401, attempting token refresh ...');
           final refreshToken = await _authService.getRefreshToken();
           if (refreshToken != null) {
@@ -77,7 +83,11 @@ class ApiService {
               LoggerService.e(_tag, 'Token refresh failed', e);
             }
           }
+          LoggerService.w(_tag, 'Token refresh failed or no refresh token, forcing logout');
+          _onForceLogout?.call();
+          return handler.resolve(Response(requestOptions: error.requestOptions));
         }
+        showHttpErrorDialog(statusCode);
         handler.next(error);
       },
     ));
