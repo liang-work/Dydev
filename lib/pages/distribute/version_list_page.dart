@@ -65,6 +65,9 @@ class _VersionListPageState extends State<VersionListPage> {
   Map<String, dynamic>? _selectedGithubRelease;
   Map<String, dynamic>? _selectedGithubAsset;
 
+  // Active asset index (-1 = main URL, >=0 = asset at index)
+  int _activeAssetIndex = -1;
+
   @override
   void initState() {
     super.initState();
@@ -245,7 +248,8 @@ class _VersionListPageState extends State<VersionListPage> {
   }
 
   // ---- Storage selector ----
-  void _openStorageSelector() {
+  void _openStorageSelector([int assetIndex = -1]) {
+    _activeAssetIndex = assetIndex;
     setState(() {
       _showStorageSelector = true;
       _selectedStorageId = null;
@@ -280,8 +284,15 @@ class _VersionListPageState extends State<VersionListPage> {
     try {
       final api = context.read<AuthProvider>().apiService;
       final url = await api.generateStorageUrl(_selectedStorageId!, _selectedStorageFile!.key, 'direct');
-      _formUrlCtrl.text = url;
-      _formFileSizeCtrl.text = _selectedStorageFile!.size.toString();
+      if (_activeAssetIndex >= 0) {
+        setState(() {
+          _formAssets[_activeAssetIndex]['download_url'] = url;
+          _formAssets[_activeAssetIndex]['file_size'] = _selectedStorageFile!.size.toString();
+        });
+      } else {
+        _formUrlCtrl.text = url;
+        _formFileSizeCtrl.text = _selectedStorageFile!.size.toString();
+      }
       _closeStorageSelector();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('生成链接失败: $e')));
@@ -289,7 +300,8 @@ class _VersionListPageState extends State<VersionListPage> {
   }
 
   // ---- GitHub Release selector ----
-  void _openGithubSelector() {
+  void _openGithubSelector([int assetIndex = -1]) {
+    _activeAssetIndex = assetIndex;
     setState(() {
       _showGithubSelector = true;
       _selectedGithubRepo = null;
@@ -327,9 +339,15 @@ class _VersionListPageState extends State<VersionListPage> {
     if (_selectedGithubAsset == null) return;
     final url = _selectedGithubAsset!['browser_download_url'] as String? ?? '';
     final size = _selectedGithubAsset!['size'] as int? ?? 0;
-    _formUrlCtrl.text = url;
-    if (size > 0) _formFileSizeCtrl.text = size.toString();
-    if (_selectedGithubRelease != null) {
+    if (_activeAssetIndex >= 0) {
+      setState(() {
+        _formAssets[_activeAssetIndex]['download_url'] = url;
+        if (size > 0) _formAssets[_activeAssetIndex]['file_size'] = size.toString();
+      });
+    } else {
+      _formUrlCtrl.text = url;
+      if (size > 0) _formFileSizeCtrl.text = size.toString();
+      if (_selectedGithubRelease != null) {
       final tag = _selectedGithubRelease!['tag_name'] as String? ?? '';
       final title = _selectedGithubRelease!['name'] as String? ?? '';
       final body = _selectedGithubRelease!['body'] as String? ?? '';
@@ -344,6 +362,7 @@ class _VersionListPageState extends State<VersionListPage> {
       }
     }
     _closeGithubSelector();
+  }
   }
 
   String _statusLabel(String s) {
@@ -745,10 +764,29 @@ class _VersionListPageState extends State<VersionListPage> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        TextField(
-                          decoration: const InputDecoration(labelText: '下载链接', border: OutlineInputBorder(), isDense: true),
-                          controller: TextEditingController(text: asset['download_url']),
-                          onChanged: (v) => setState(() => _formAssets[i]['download_url'] = v),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                decoration: const InputDecoration(labelText: '下载链接', border: OutlineInputBorder(), isDense: true),
+                                controller: TextEditingController(text: asset['download_url']),
+                                onChanged: (v) => setState(() => _formAssets[i]['download_url'] = v),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: Icon(Icons.storage, size: 16, color: Colors.grey.shade600),
+                              onPressed: () => _openStorageSelector(i),
+                              tooltip: '从存储选择',
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.code, size: 16, color: Colors.grey.shade600),
+                              onPressed: () => _openGithubSelector(i),
+                              tooltip: 'GitHub Release',
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
                         ),
                       ],
                     ),

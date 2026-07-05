@@ -310,12 +310,13 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
+            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(_editing != null ? '编辑软件' : '添加软件', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 4),
@@ -358,6 +359,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

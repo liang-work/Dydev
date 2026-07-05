@@ -155,6 +155,15 @@ class ApiService {
     await _dio.post(ApiConfig.actionUrl(ApiConfig.storeApps, id, 'unpublish'));
   }
 
+  Future<List<Map<String, dynamic>>> getStoreCategories() async {
+    final response = await _dio.get('/api/store/categories/');
+    return _unwrapList(response.data).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> syncStoreAppVersion(Object id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.storeApps, id, 'sync_version'));
+  }
+
   // ---- Notifications ----
   Future<List<NotificationModel>> getNotifications() async {
     final response = await _dio.get(ApiConfig.notifications);
