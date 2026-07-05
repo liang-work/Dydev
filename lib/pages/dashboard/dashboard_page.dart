@@ -49,9 +49,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                      Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                       const SizedBox(height: 12),
-                      Text(provider.error!, style: TextStyle(color: Colors.red.shade400), textAlign: TextAlign.center),
+                      Text(provider.error!, style: TextStyle(color: Theme.of(context).colorScheme.error), textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       FilledButton.tonal(onPressed: () => provider.load(), child: Text('common.retry'.tr())),
                     ],
@@ -64,13 +64,26 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 32),
 
               // ---- My Apps + Quick Actions ----
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 2, child: MyAppsSection(apps: provider.myApps)),
-                  const SizedBox(width: 24),
-                  Expanded(flex: 1, child: QuickActions()),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 600) {
+                    return Column(
+                      children: [
+                        MyAppsSection(apps: provider.myApps),
+                        const SizedBox(height: 24),
+                        QuickActions(),
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: MyAppsSection(apps: provider.myApps)),
+                      const SizedBox(width: 24),
+                      Expanded(flex: 1, child: QuickActions()),
+                    ],
+                  );
+                },
               ),
             ],
           ],
@@ -94,7 +107,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 title: '我的应用',
                 value: '${stats.myAppCount}',
                 icon: Icons.apps,
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             SizedBox(
@@ -103,7 +116,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 title: '总下载量',
                 value: _formatCount(stats.totalDownloads),
                 icon: Icons.download_outlined,
-                color: Colors.green,
+                color: Theme.of(context).colorScheme.tertiary,
               ),
             ),
             SizedBox(
@@ -112,7 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 title: '收到评价',
                 value: '${stats.totalReviews}',
                 icon: Icons.star_outline,
-                color: Colors.orange,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             SizedBox(
@@ -121,7 +134,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 title: '平台应用',
                 value: '${stats.publishedAppCount}',
                 icon: Icons.store,
-                color: Colors.purple,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],

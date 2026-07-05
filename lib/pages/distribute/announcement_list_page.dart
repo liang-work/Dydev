@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/software.dart';
 import '../../models/announcement.dart';
@@ -199,16 +200,16 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
     return labels[t] ?? t;
   }
 
-  Color _typeColor(String t) {
+  Color _announcementTypeColor(ColorScheme cs, String t) {
     switch (t) {
       case 'urgent':
-        return Colors.red;
+        return cs.error;
       case 'update':
-        return Colors.blue;
+        return cs.primary;
       case 'operation':
-        return Colors.orange;
+        return cs.secondary;
       default:
-        return Colors.grey;
+        return cs.onSurfaceVariant;
     }
   }
 
@@ -217,16 +218,16 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
     return labels[s] ?? s;
   }
 
-  Color _statusColor(String s) {
+  Color _announcementStatusColor(ColorScheme cs, String s) {
     switch (s) {
       case 'published':
-        return Colors.green;
+        return cs.tertiary;
       case 'draft':
-        return Colors.orange;
+        return cs.secondary;
       case 'expired':
-        return Colors.grey;
+        return cs.onSurfaceVariant;
       default:
-        return Colors.grey;
+        return cs.onSurfaceVariant;
     }
   }
 
@@ -241,10 +242,16 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(
       children: [
         Scaffold(
-      appBar: AppBar(title: const Text('公告管理')),
+      appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+            : null,
+        title: const Text('公告管理'),
+      ),
       body: Row(
         children: [
           SizedBox(
@@ -302,7 +309,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(_selected?.name ?? '公告管理', style: theme.textTheme.titleMedium),
-                            Text(_selected != null ? '管理该软件的公告推送' : '请从左侧选择一个软件', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                            Text(_selected != null ? '管理该软件的公告推送' : '请从左侧选择一个软件', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -323,9 +330,9 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.campaign, size: 48, color: Colors.grey.shade300),
+                                  Icon(Icons.campaign, size: 48, color: cs.surfaceContainerHigh),
                                   const SizedBox(height: 12),
-                                  Text('请从左侧选择一个软件来管理公告', style: TextStyle(color: Colors.grey.shade500)),
+                                  Text('请从左侧选择一个软件来管理公告', style: TextStyle(color: cs.onSurfaceVariant)),
                                 ],
                               ),
                             )
@@ -334,11 +341,11 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.campaign, size: 48, color: Colors.grey.shade300),
+                                      Icon(Icons.campaign, size: 48, color: cs.surfaceContainerHigh),
                                       const SizedBox(height: 12),
-                                      Text('暂无公告', style: TextStyle(color: Colors.grey.shade500)),
+                                      Text('暂无公告', style: TextStyle(color: cs.onSurfaceVariant)),
                                       const SizedBox(height: 4),
-                                      Text('点击"创建公告"按钮添加第一条公告', style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                                      Text('点击"创建公告"按钮添加第一条公告', style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 13)),
                                     ],
                                   ),
                                 )
@@ -359,19 +366,19 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: _typeColor(a.announcementType).withValues(alpha: 0.1),
+                                                    color: _announcementTypeColor(cs, a.announcementType).withValues(alpha: 0.1),
                                                     borderRadius: BorderRadius.circular(4),
                                                   ),
-                                                  child: Text(_typeLabel(a.announcementType), style: TextStyle(fontSize: 12, color: _typeColor(a.announcementType))),
+                                                  child: Text(_typeLabel(a.announcementType), style: TextStyle(fontSize: 12, color: _announcementTypeColor(cs, a.announcementType))),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: _statusColor(a.status).withValues(alpha: 0.1),
+                                                    color: _announcementStatusColor(cs, a.status).withValues(alpha: 0.1),
                                                     borderRadius: BorderRadius.circular(4),
                                                   ),
-                                                  child: Text(_statusLabel(a.status), style: TextStyle(fontSize: 12, color: _statusColor(a.status))),
+                                                  child: Text(_statusLabel(a.status), style: TextStyle(fontSize: 12, color: _announcementStatusColor(cs, a.status))),
                                                 ),
                                                 const Spacer(),
                                                 PopupMenuButton<String>(
@@ -384,7 +391,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                                                     const PopupMenuItem(value: 'edit', child: Text('编辑')),
                                                     if (a.status == 'draft')
                                                       const PopupMenuItem(value: 'publish', child: Text('发布')),
-                                                    const PopupMenuItem(value: 'delete', child: Text('删除', style: TextStyle(color: Colors.red))),
+                                                    PopupMenuItem(value: 'delete', child: Text('删除', style: TextStyle(color: cs.error))),
                                                   ],
                                                 ),
                                               ],
@@ -392,17 +399,17 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                                             const SizedBox(height: 8),
                                             Text(a.title, style: theme.textTheme.titleMedium),
                                             const SizedBox(height: 4),
-                                            Text(a.content, style: TextStyle(color: Colors.grey.shade600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                            Text(a.content, style: TextStyle(color: cs.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis),
                                             const SizedBox(height: 8),
                                             Row(
                                               children: [
                                                 if (a.filterType != 'all')
-                                                  Text('筛选: ${a.filterType == 'version' ? '版本: ${a.filterVersions.join(', ')}' : '渠道: ${a.filterChannels.join(', ')}'}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                                  Text('筛选: ${a.filterType == 'version' ? '版本: ${a.filterVersions.join(', ')}' : '渠道: ${a.filterChannels.join(', ')}'}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                                 const SizedBox(width: 16),
                                                 if (a.publishedAt != null)
-                                                  Text('发布于: ${_formatDate(a.publishedAt!)}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                                  Text('发布于: ${_formatDate(a.publishedAt!)}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                                 if (a.expiresAt != null)
-                                                  Text('过期于: ${_formatDate(a.expiresAt!)}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                                  Text('过期于: ${_formatDate(a.expiresAt!)}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                               ],
                                             ),
                                           ],
@@ -425,8 +432,9 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
   Widget _buildDialogOverlay() {
     if (!_showFormDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -490,7 +498,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                     if (_loadingChannels)
                       const Text('加载渠道中...')
                     else if (_channels.isEmpty)
-                      Text('该软件暂无渠道', style: TextStyle(color: Colors.grey.shade500))
+                      Text('该软件暂无渠道', style: TextStyle(color: cs.onSurfaceVariant))
                     else
                       Wrap(spacing: 6, children: _channels.map((c) => FilterChip(
                         label: Text(c),

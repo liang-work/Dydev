@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,12 +18,12 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Card(
+    final cs = Theme.of(context).colorScheme;
+    return Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey.shade200),
+          side: BorderSide(color: cs.outlineVariant),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -35,10 +36,10 @@ class _QuickActionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(26),
+                    color: cs.primary.withAlpha(26),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 28),
+                  child: Icon(icon, color: cs.primary, size: 28),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -48,19 +49,18 @@ class _QuickActionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade500),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
         ),
-      ),
     );
   }
 }
 
-/// Quick action shortcuts: Publish App, Version Management, Profile Settings.
+/// Quick action shortcuts: Publish App, Create Software, View Notifications.
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key});
 
@@ -70,33 +70,63 @@ class QuickActions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '快捷入口',
+          'dashboard.quick_actions'.tr(),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            _QuickActionCard(
-              icon: Icons.publish,
-              label: '发布应用',
-              description: '提交新的应用到商店',
-              onTap: () {},
-            ),
-            const SizedBox(width: 12),
-            _QuickActionCard(
-              icon: Icons.layers_outlined,
-              label: '版本管理',
-              description: '管理应用版本和更新',
-              onTap: () => context.go('/dashboard/versions'),
-            ),
-            const SizedBox(width: 12),
-            _QuickActionCard(
-              icon: Icons.person_outline,
-              label: '个人设置',
-              description: '修改个人资料和偏好',
-              onTap: () => context.go('/dashboard/settings'),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 400) {
+              return Column(
+                children: [
+                  _QuickActionCard(
+                    icon: Icons.publish,
+                    label: 'dashboard.quick_actions.publish'.tr(),
+                    description: '提交新的应用到商店',
+                    onTap: () => context.go('/dashboard/apps?action=create'),
+                  ),
+                  const SizedBox(height: 12),
+                  _QuickActionCard(
+                    icon: Icons.add_circle_outline,
+                    label: 'dashboard.quick_actions.create_software'.tr(),
+                    description: '创建新的软件分发项目',
+                    onTap: () => context.go('/dashboard/softwares?action=create'),
+                  ),
+                  const SizedBox(height: 12),
+                  _QuickActionCard(
+                    icon: Icons.notifications_outlined,
+                    label: 'dashboard.quick_actions.view_notifications'.tr(),
+                    description: '查看系统通知和邀请',
+                    onTap: () => context.go('/dashboard/notifications'),
+                  ),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.publish,
+                  label: 'dashboard.quick_actions.publish'.tr(),
+                  description: '提交新的应用到商店',
+                  onTap: () => context.go('/dashboard/apps?action=create'),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.add_circle_outline,
+                  label: 'dashboard.quick_actions.create_software'.tr(),
+                  description: '创建新的软件分发项目',
+                  onTap: () => context.go('/dashboard/softwares?action=create'),
+                )),
+                const SizedBox(width: 12),
+                Expanded(child: _QuickActionCard(
+                  icon: Icons.notifications_outlined,
+                  label: 'dashboard.quick_actions.view_notifications'.tr(),
+                  description: '查看系统通知和邀请',
+                  onTap: () => context.go('/dashboard/notifications'),
+                )),
+              ],
+            );
+          },
         ),
       ],
     );

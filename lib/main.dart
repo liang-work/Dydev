@@ -8,6 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'app.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
 import 'services/logger_service.dart';
 
@@ -44,14 +45,21 @@ void main() async {
       path: 'assets/locales',
       fallbackLocale: const Locale('zh', 'CN'),
       startLocale: const Locale('zh', 'CN'),
-      child: ChangeNotifierProvider<AuthProvider>(
-        create: (_) => AuthProvider(authService: authService)..init(),
-        child: ChangeNotifierProvider<DashboardProvider>(
-          create: (context) => DashboardProvider(
-            apiService: context.read<AuthProvider>().apiService,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ThemeProvider>(
+            create: (_) => ThemeProvider()..init(),
           ),
-          child: const DevPlatformApp(),
-        ),
+          ChangeNotifierProvider<AuthProvider>(
+            create: (_) => AuthProvider(authService: authService)..init(),
+          ),
+          ChangeNotifierProvider<DashboardProvider>(
+            create: (context) => DashboardProvider(
+              apiService: context.read<AuthProvider>().apiService,
+            ),
+          ),
+        ],
+        child: const DevPlatformApp(),
       ),
     ),
   );

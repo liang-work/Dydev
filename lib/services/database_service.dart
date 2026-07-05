@@ -1,5 +1,3 @@
-import 'dart:io' as io;
-
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/user.dart';
@@ -90,15 +88,6 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'dydev.db');
     LoggerService.d(_tag, 'Database path: $path');
-
-    // Delete stale database files (including WAL/SHM) to ensure fresh schema.
-    for (final suffix in ['', '-wal', '-shm']) {
-      final f = io.File('$path$suffix');
-      if (await f.exists()) {
-        await f.delete();
-        LoggerService.d(_tag, 'Removed stale DB file: $path$suffix');
-      }
-    }
 
     return openDatabase(
       path,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/github_account.dart';
 import '../../models/gitea_account.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/database_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -96,12 +97,15 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _saveProfile() async {
     setState(() => _savingProfile = true);
     try {
-      final api = context.read<AuthProvider>().apiService;
-      await api.updateProfile({
+      final auth = context.read<AuthProvider>();
+      final api = auth.apiService;
+      final updated = await api.updateProfile({
         'nickname': _nicknameCtrl.text,
         'phone': _phoneCtrl.text,
         'bio': _bioCtrl.text,
       });
+      await DatabaseService.saveUser(updated);
+      auth.updateUser(updated);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('保存成功')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存失败: $e')));
@@ -215,7 +219,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('确认'), content: const Text('确定要删除这个镜像吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red)))],
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(context).colorScheme.error)))],
     ));
     if (confirm != true) return;
     try {
@@ -234,6 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final user = context.watch<AuthProvider>().user;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -260,7 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(user?.nickname ?? user?.username ?? '用户', style: theme.textTheme.titleLarge),
-                          Text(user?.email ?? '', style: TextStyle(color: Colors.grey.shade600)),
+                          Text(user?.email ?? '', style: TextStyle(color: cs.onSurfaceVariant)),
                         ],
                       ),
                     ),
@@ -268,33 +273,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: () => context.read<AuthProvider>().logout(),
                       icon: const Icon(Icons.logout, size: 16),
                       label: const Text('退出登录'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Language setting
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('settings.language'.tr(), style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text('settings.language.description'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Locale>(
-                      value: context.locale,
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
-                      items: const [
-                        DropdownMenuItem(value: Locale('zh', 'CN'), child: Text('中文')),
-                        DropdownMenuItem(value: Locale('en', 'US'), child: Text('English')),
-                      ],
-                      onChanged: (locale) {
-                        if (locale != null) context.setLocale(locale);
-                      },
                     ),
                   ],
                 ),
@@ -310,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Text('settings.profile'.tr(), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text('settings.profile.description'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text('settings.profile.description'.tr(), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                     const SizedBox(height: 20),
                     TextField(controller: TextEditingController(text: user?.username ?? ''), decoration: const InputDecoration(labelText: '用户名', border: OutlineInputBorder()), enabled: false),
                     const SizedBox(height: 12),
@@ -348,13 +326,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.code, color: Colors.grey.shade700),
+                        Icon(Icons.code, color: cs.onSurface),
                         const SizedBox(width: 8),
                         Text('GitHub 账号绑定', style: theme.textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text('绑定 GitHub 账号后可选择仓库 Release 作为更新包', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text('绑定 GitHub 账号后可选择仓库 Release 作为更新包', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                     const SizedBox(height: 16),
                     if (_loadingGithub)
                       const Center(child: CircularProgressIndicator())
@@ -378,7 +356,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     Text(_githubAccount!.githubName ?? _githubAccount!.githubLogin,
                                         style: const TextStyle(fontWeight: FontWeight.w600)),
                                     Text('@${_githubAccount!.githubLogin}',
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                   ],
                                 ),
                               ),
@@ -391,17 +369,17 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: 8),
                           Text('绑定时间: ${_formatDate(_githubAccount!.createdAt)}',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                         ],
                       )
                     else
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.code, size: 48, color: Colors.grey.shade300),
+                            Icon(Icons.code, size: 48, color: cs.surfaceContainerHigh),
                             const SizedBox(height: 8),
                             Text('绑定 GitHub 账号以使用仓库 Release 功能',
-                                style: TextStyle(color: Colors.grey.shade500)),
+                                style: TextStyle(color: cs.onSurfaceVariant)),
                             const SizedBox(height: 12),
                             FilledButton.icon(
                               onPressed: _githubLinking ? null : _bindGithub,
@@ -427,14 +405,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.source, color: Colors.grey.shade700),
+                        Icon(Icons.source, color: cs.onSurface),
                         const SizedBox(width: 8),
                         Text('OSGame.net 账号绑定', style: theme.textTheme.titleMedium),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text('绑定 OSGame.net 账号后可选择仓库作为游戏源码',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                     const SizedBox(height: 16),
                     if (_loadingGitea)
                       const Center(child: CircularProgressIndicator())
@@ -455,7 +433,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     Text(_giteaAccount!.giteaUsername ?? '',
                                         style: const TextStyle(fontWeight: FontWeight.w600)),
                                     Text('OSGame.net ID: ${_giteaAccount!.giteaId ?? ''}',
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                   ],
                                 ),
                               ),
@@ -467,18 +445,18 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text('绑定时间: ${_formatDate(_giteaAccount!.giteaConnectedAt)}',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                        Text('绑定时间: ${_formatDate(_giteaAccount!.giteaConnectedAt)}',
+                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                         ],
                       )
                     else
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.source, size: 48, color: Colors.grey.shade300),
+                            Icon(Icons.source, size: 48, color: cs.surfaceContainerHigh),
                             const SizedBox(height: 8),
                             Text('绑定 开源游戏仓库 账号以使用仓库功能',
-                                style: TextStyle(color: Colors.grey.shade500)),
+                                style: TextStyle(color: cs.onSurfaceVariant)),
                             const SizedBox(height: 12),
                             FilledButton.icon(
                               onPressed: _giteaLinking ? null : _bindGitea,
@@ -510,7 +488,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           children: [
                             Text('GitHub 加速镜像', style: theme.textTheme.titleMedium),
                             Text('配置自定义加速域名，加快 GitHub 文件下载速度',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                           ],
                         ),
                         FilledButton.tonalIcon(
@@ -527,9 +505,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.dns, size: 48, color: Colors.grey.shade300),
+                            Icon(Icons.dns, size: 48, color: cs.surfaceContainerHigh),
                             const SizedBox(height: 8),
-                            Text('暂无加速镜像配置', style: TextStyle(color: Colors.grey.shade500)),
+                            Text('暂无加速镜像配置', style: TextStyle(color: cs.onSurfaceVariant)),
                           ],
                         ),
                       )
@@ -537,14 +515,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       ..._mirrors.map((m) => Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(border: Border.all(color: cs.outlineVariant), borderRadius: BorderRadius.circular(8)),
                         child: Row(
                           children: [
                             Container(
                               width: 8, height: 8,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: m.isActive ? Colors.green : Colors.grey,
+                                color: m.isActive ? cs.tertiary : cs.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -553,7 +531,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(m.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  Text(m.baseUrl, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                  Text(m.baseUrl, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                 ],
                               ),
                             ),
@@ -563,7 +541,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               onPressed: () => _openMirrorDialog(m),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete, size: 16, color: Colors.red.shade400),
+                              icon: Icon(Icons.delete, size: 16, color: cs.error),
                               onPressed: () => _deleteMirror(m.id),
                             ),
                           ],
@@ -676,7 +654,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600)),
+          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),

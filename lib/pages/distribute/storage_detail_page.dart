@@ -139,12 +139,12 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
     }
   }
 
-  Color _typeColor(String type) {
+  Color _typeColor(ColorScheme cs, String type) {
     switch (type) {
-      case 's3': return Colors.orange;
-      case 'webdav': return Colors.blue;
-      case 'direct': return Colors.green;
-      default: return Colors.grey;
+      case 's3': return cs.secondary;
+      case 'webdav': return cs.primary;
+      case 'direct': return cs.tertiary;
+      default: return cs.onSurfaceVariant;
     }
   }
 
@@ -159,8 +159,12 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(children: [Scaffold(
       appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+            : null,
         title: Text(_storage?.name ?? '存储详情'),
         actions: [
           IconButton(
@@ -193,16 +197,16 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                 // Storage info header
                 Container(
                   padding: const EdgeInsets.all(16),
-                  color: Colors.grey.shade50,
+                  color: cs.surfaceContainerLow,
                   child: Row(
                     children: [
                       Container(
                         width: 48, height: 48,
                         decoration: BoxDecoration(
-                          color: _typeColor(_storage!.storageType).withValues(alpha: 0.1),
+                          color: _typeColor(cs, _storage!.storageType).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(_typeIcon(_storage!.storageType), color: _typeColor(_storage!.storageType)),
+                        child: Icon(_typeIcon(_storage!.storageType), color: _typeColor(cs, _storage!.storageType)),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -211,17 +215,17 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                           children: [
                             Text(_storage!.name, style: theme.textTheme.titleMedium),
                             Text(_storage!.storageType == 's3' ? 'S3 - ${_storage!.s3Bucket}' : _storage!.storageType == 'webdav' ? 'WebDAV 存储' : '直接链接模式',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                           ],
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _storage!.isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                          color: _storage!.isActive ? cs.tertiaryContainer : cs.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(_storage!.isActive ? '已启用' : '已禁用', style: TextStyle(fontSize: 12, color: _storage!.isActive ? Colors.green : Colors.grey)),
+                        child: Text(_storage!.isActive ? '已启用' : '已禁用', style: TextStyle(fontSize: 12, color: _storage!.isActive ? cs.tertiary : cs.onSurfaceVariant)),
                       ),
                     ],
                   ),
@@ -238,7 +242,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                           onPressed: _goUp,
                         ),
                       Expanded(
-                        child: Text('路径: /${_currentPath}', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        child: Text('路径: /${_currentPath}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh),
@@ -256,9 +260,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.folder_open, size: 48, color: Colors.grey.shade300),
+                                  Icon(Icons.folder_open, size: 48, color: cs.surfaceContainerHigh),
                                   const SizedBox(height: 12),
-                                  Text('当前目录为空', style: TextStyle(color: Colors.grey.shade500)),
+                                  Text('当前目录为空', style: TextStyle(color: cs.onSurfaceVariant)),
                                 ],
                               ),
                             )
@@ -268,13 +272,13 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                                 final f = _files[i];
                                 return ListTile(
                                   leading: Icon(f.isDirectory ? Icons.folder : Icons.insert_drive_file,
-                                      color: f.isDirectory ? Colors.blue : Colors.grey),
+                                      color: f.isDirectory ? cs.primary : cs.onSurfaceVariant),
                                   title: Text(f.isDirectory ? f.name : f.name, style: const TextStyle(fontSize: 14)),
                                   subtitle: Row(
                                     children: [
                                       if (f.sizeFormatted.isNotEmpty) Text('${f.sizeFormatted}  '),
                                       if (f.lastModified.isNotEmpty) Text(_formatDate(f.lastModified)),
-                                    ].map((w) => DefaultTextStyle(style: TextStyle(fontSize: 12, color: Colors.grey.shade500), child: w)).toList(),
+                                    ].map((w) => DefaultTextStyle(style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant), child: w)).toList(),
                                   ),
                                   onTap: f.isDirectory ? () => _enterDir(f.path) : null,
                                   trailing: Row(
@@ -317,7 +321,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                                         ),
                                       ],
                                       IconButton(
-                                        icon: Icon(Icons.delete, size: 18, color: Colors.red.shade400),
+                                        icon: Icon(Icons.delete, size: 18, color: cs.error),
                                         tooltip: '删除',
                                         onPressed: () async {
                                           final confirm = await showDialog<bool>(
@@ -327,7 +331,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                                               content: Text(f.isDirectory ? '确定要删除文件夹 "${f.name}" 及其所有内容吗？此操作不可恢复！' : '确定要删除 ${f.name} 吗？'),
                                               actions: [
                                                 TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-                                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red))),
+                                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error))),
                                               ],
                                             ),
                                           );
@@ -361,8 +365,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
   Widget _buildEditDialog() {
     if (!_showEditDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -421,8 +426,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
   Widget _buildUploadDialog() {
     if (!_showUploadDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -433,13 +439,13 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
               children: [
                 Text('上传文件', style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
-            Text('上传文件到当前目录: /$_currentPath', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+            Text('上传文件到当前目录: /$_currentPath', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
             const SizedBox(height: 20),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                border: Border.all(color: cs.outlineVariant, style: BorderStyle.solid),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: _selectedFilePath == null
@@ -449,9 +455,9 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                       },
                       child: Column(
                         children: [
-                          Icon(Icons.cloud_upload, size: 48, color: Colors.grey.shade400),
+                          Icon(Icons.cloud_upload, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
                           const SizedBox(height: 8),
-                          Text('请选择文件', style: TextStyle(color: Colors.grey.shade500)),
+                          Text('请选择文件', style: TextStyle(color: cs.onSurfaceVariant)),
                           TextButton(
                             onPressed: () {
                               // Simulate file selection
@@ -612,6 +618,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
 
   Widget _buildUrlDialog() {
     if (!_showUrlDialog) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Dialog(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -621,17 +628,17 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
           children: [
             const Text('用于版本发布'),
             const SizedBox(height: 4),
-            Text('选择链接类型并生成下载链接', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+            Text('选择链接类型并生成下载链接', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
             const SizedBox(height: 20),
             if (_urlFile != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(_urlFile!.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(_urlFile!.sizeFormatted, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text(_urlFile!.sizeFormatted, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                   ],
                 ),
               ),
@@ -654,7 +661,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
                 child: SelectableText(_generatedUrl!, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
               ),
               const SizedBox(height: 8),

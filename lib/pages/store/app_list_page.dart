@@ -1,9 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/store_app.dart';
 import '../../models/software.dart';
 import '../../models/version.dart';
+import '../../models/channel.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/logger_service.dart';
 
@@ -47,6 +49,7 @@ class _AppListPageState extends State<AppListPage> {
 
   // Distribute linking
   List<Software> _softwares = [];
+  List<Channel> _channels = [];
   String? _formSoftware;
   String? _formChannel;
   Version? _selectedChannelVersion;
@@ -56,6 +59,10 @@ class _AppListPageState extends State<AppListPage> {
     super.initState();
     _load();
     _loadSoftwares();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final query = GoRouterState.of(context).uri.queryParameters;
+      if (query['action'] == 'create') _openCreate();
+    });
   }
 
   @override
@@ -106,12 +113,16 @@ class _AppListPageState extends State<AppListPage> {
   Future<void> _onSoftwareChanged() async {
     _formChannel = null;
     _selectedChannelVersion = null;
-    if (_formSoftware == null) return;
+    _channels = [];
+    if (_formSoftware == null) { setState(() {}); return; }
     try {
       final api = context.read<AuthProvider>().apiService;
-      final channels = await api.getChannels(_formSoftware!);
-      if (channels.isNotEmpty) _formChannel = channels.first.id;
-    } catch (_) {}
+      _channels = await api.getChannels(_formSoftware!);
+      if (_channels.isNotEmpty) _formChannel = _channels.first.id;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() {});
+    }
   }
 
   Future<void> _onChannelChanged() async {
@@ -126,9 +137,11 @@ class _AppListPageState extends State<AppListPage> {
         final latest = filtered.first;
         _selectedChannelVersion = latest;
         _formVersionCtrl.text = latest.version;
-        setState(() {});
       }
-    } catch (_) {}
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() {});
+    }
   }
 
   void _openCreate() {
@@ -296,11 +309,11 @@ class _AppListPageState extends State<AppListPage> {
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('common.delete.confirm'.tr()),
         const SizedBox(height: 8),
-        Text('store.delete.hint'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+        Text('store.delete.hint'.tr(), style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant, fontSize: 13)),
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('common.cancel'.tr())),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('common.delete'.tr(), style: const TextStyle(color: Colors.red))),
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('common.delete'.tr(), style: TextStyle(color: Theme.of(ctx).colorScheme.error))),
       ],
     ));
     if (confirm != true) return;
@@ -326,23 +339,27 @@ class _AppListPageState extends State<AppListPage> {
     }
   }
 
-  Color _statusColor(String s) {
+  Color _statusColor(ColorScheme cs, String s) {
     switch (s) {
-      case 'published': return Colors.green;
-      case 'pending': return Colors.orange;
-      case 'rejected': return Colors.red;
-      case 'removed': return Colors.grey;
-      default: return Colors.blueGrey;
+      case 'published': return cs.tertiary;
+      case 'pending': return cs.secondary;
+      case 'rejected': return cs.error;
+      case 'removed': return cs.onSurfaceVariant;
+      default: return cs.onSurfaceVariant;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: Navigator.of(context).canPop()
+                ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+                : null,
             title: Text('store.title'.tr()),
             actions: [
               FilledButton.tonalIcon(
@@ -360,9 +377,9 @@ class _AppListPageState extends State<AppListPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.store, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.store, size: 48, color: cs.surfaceContainerHigh),
                           const SizedBox(height: 12),
-                          Text('store.empty'.tr(), style: TextStyle(color: Colors.grey.shade500)),
+                          Text('store.empty'.tr(), style: TextStyle(color: cs.onSurfaceVariant)),
                         ],
                       ),
                     )
@@ -398,16 +415,16 @@ class _AppListPageState extends State<AppListPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: _statusColor(app.status.name).withValues(alpha: 0.1),
+                                            color: _statusColor(cs, app.status.name).withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Text(_statusLabel(app.status.name),
-                                              style: TextStyle(fontSize: 11, color: _statusColor(app.status.name))),
+                                              style: TextStyle(fontSize: 11, color: _statusColor(cs, app.status.name))),
                                         ),
                                       ]),
                                       const SizedBox(height: 4),
                                       Text(app.shortDescription.isEmpty ? 'store.no_description'.tr() : app.shortDescription,
-                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                 ),
@@ -424,7 +441,7 @@ class _AppListPageState extends State<AppListPage> {
                                       PopupMenuItem(value: 'publish', child: Text('common.publish'.tr())),
                                     if (app.status.name == 'published')
                                       PopupMenuItem(value: 'unpublish', child: Text('common.unpublish'.tr())),
-                                    PopupMenuItem(value: 'delete', child: Text('common.delete'.tr(), style: const TextStyle(color: Colors.red))),
+                                    PopupMenuItem(value: 'delete', child: Text('common.delete'.tr(), style: TextStyle(color: cs.error))),
                                   ],
                                 ),
                               ],
@@ -442,12 +459,13 @@ class _AppListPageState extends State<AppListPage> {
   Widget _buildDialogOverlay() {
     if (!_showDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
-        child: Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 650),
+          child: Dialog(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600, maxHeight: MediaQuery.of(context).size.height * 0.85),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: SingleChildScrollView(
@@ -502,7 +520,7 @@ class _AppListPageState extends State<AppListPage> {
                     // Use distribute checkbox
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8), color: Colors.grey.shade50),
+                      decoration: BoxDecoration(border: Border.all(color: cs.surfaceContainerHigh), borderRadius: BorderRadius.circular(8), color: cs.surfaceContainerLow),
                       child: Row(children: [
                         Checkbox(value: _formUseDistribute, onChanged: (v) => setState(() => _formUseDistribute = v ?? false)),
                         const SizedBox(width: 8),
@@ -517,6 +535,29 @@ class _AppListPageState extends State<AppListPage> {
                         items: _softwares.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                         onChanged: (v) { setState(() => _formSoftware = v); _onSoftwareChanged(); },
                       ),
+                      if (_channels.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _formChannel,
+                          decoration: const InputDecoration(labelText: '选择渠道', border: OutlineInputBorder()),
+                          items: _channels.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.channelType})'))).toList(),
+                          onChanged: (v) { setState(() => _formChannel = v); _onChannelChanged(); },
+                        ),
+                      ],
+                      if (_selectedChannelVersion != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: cs.tertiaryContainer, borderRadius: BorderRadius.circular(8), border: Border.all(color: cs.tertiaryContainer)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('最新版本: ${_selectedChannelVersion!.version}', style: TextStyle(fontWeight: FontWeight.w600, color: cs.onTertiaryContainer, fontSize: 13)),
+                              Text('版本号: ${_selectedChannelVersion!.versionCode}', style: TextStyle(color: cs.onTertiaryContainer, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 12),
                     TextField(

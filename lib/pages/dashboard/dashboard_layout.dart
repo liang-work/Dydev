@@ -7,7 +7,8 @@ import 'widgets/sidebar.dart';
 
 /// The main authenticated layout with a left sidebar and content area.
 ///
-/// This widget wraps all dashboard sub-pages via GoRouter ShellRoute.
+/// On desktop (width >= 768) the sidebar is fixed to the left.
+/// On mobile (width < 768) the sidebar is hidden behind a hamburger drawer.
 class DashboardLayout extends StatelessWidget {
   final Widget child;
 
@@ -17,73 +18,157 @@ class DashboardLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final routePath = GoRouterState.of(context).matchedLocation;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            Sidebar(
-              currentRoute: routePath,
-              onNavigate: (route) => context.go(route),
-              onLogout: () async {
-                await context.read<AuthProvider>().logout();
-                if (context.mounted) context.go('/login');
-              },
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 768;
+        return _DashboardContent(
+          isMobile: isMobile,
+          routePath: routePath,
+          child: child,
+        );
+      },
+    );
+  }
+}
 
-            // Main content area.
-            Expanded(
+class _DashboardContent extends StatefulWidget {
+  final bool isMobile;
+  final String routePath;
+  final Widget child;
+
+  const _DashboardContent({
+    required this.isMobile,
+    required this.routePath,
+    required this.child,
+  });
+
+  @override
+  State<_DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends State<_DashboardContent> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Widget _buildSidebar(BuildContext context) {
+    return Sidebar(
+      currentRoute: widget.routePath,
+      onNavigate: (route) {
+        if (widget.isMobile) _scaffoldKey.currentState?.closeDrawer();
+        context.go(route);
+      },
+      onLogout: () async {
+        await context.read<AuthProvider>().logout();
+        if (context.mounted) context.go('/login');
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    if (widget.isMobile) {
+      return Scaffold(
+        key: _scaffoldKey,
+        drawer: Drawer(child: _buildSidebar(context)),
+        body: SafeArea(
+          child: Container(
+            color: cs.surfaceContainerLow,
+            child: Column(
+              children: [
+                _buildTopBar(context, widget.routePath, widget.isMobile),
+                Expanded(child: widget.child),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      body: Row(
+        children: [
+          _buildSidebar(context),
+          Expanded(
+            child: SafeArea(
+              left: false, right: false,
               child: Container(
-                color: Colors.grey.shade50,
+                color: cs.surfaceContainerLow,
                 child: Column(
                   children: [
-                    _buildTopBar(context, routePath),
-                    Expanded(child: child),
+                    _buildTopBar(context, widget.routePath, widget.isMobile),
+                    Expanded(child: widget.child),
                   ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context, String routePath) {
+  Widget _buildTopBar(BuildContext context, String routePath, bool isMobile) {
     final auth = context.watch<AuthProvider>();
-
-    // Determine page title from the current route.
+    final cs = Theme.of(context).colorScheme;
     final pageTitle = _pageTitleFor(routePath);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        color: cs.surface,
+        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
         children: [
-          Text(
-            pageTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          if (isMobile)
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+          if (isMobile) const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              pageTitle,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           const Spacer(),
           IconButton(
-            icon: Icon(Icons.settings_outlined, color: Colors.grey.shade500, size: 20),
+            icon: Icon(Icons.settings_outlined, color: cs.onSurfaceVariant, size: 20),
             tooltip: 'nav.settings'.tr(),
-            onPressed: () => context.go('/dashboard/settings'),
+            onPressed: () => context.go('/dashboard/app-settings'),
           ),
           if (auth.user != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.person_outline, color: Colors.grey.shade500, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  auth.user!.nickname.isNotEmpty ? auth.user!.nickname : auth.user!.username,
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-                ),
-              ],
-            ),
+            isMobile
+                ? CircleAvatar(
+                    radius: 12,
+                    backgroundImage: auth.user!.avatar.isNotEmpty
+                        ? NetworkImage(auth.user!.avatar) as ImageProvider
+                        : null,
+                    child: auth.user!.avatar.isEmpty
+                        ? Icon(Icons.person_outline, size: 14, color: cs.onSurfaceVariant)
+                        : null,
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundImage: auth.user!.avatar.isNotEmpty
+                            ? NetworkImage(auth.user!.avatar) as ImageProvider
+                            : null,
+                        child: auth.user!.avatar.isEmpty
+                            ? Icon(Icons.person_outline, size: 14, color: cs.onSurfaceVariant)
+                            : null,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        auth.user!.nickname.isNotEmpty ? auth.user!.nickname : auth.user!.username,
+                        style: TextStyle(color: cs.onSurface, fontSize: 14),
+                      ),
+                    ],
+                  ),
         ],
       ),
     );
@@ -99,6 +184,7 @@ class DashboardLayout extends StatelessWidget {
     if (path.startsWith('/dashboard/config')) return 'app_bar.config'.tr();
     if (path.startsWith('/dashboard/apps')) return 'app_bar.apps'.tr();
     if (path.startsWith('/dashboard/settings')) return 'app_bar.settings'.tr();
+    if (path.startsWith('/dashboard/app-settings')) return 'app_bar.settings'.tr();
     return 'app_bar.dashboard'.tr();
   }
 }

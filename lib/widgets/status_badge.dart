@@ -9,12 +9,13 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final (Color bg, Color fg) = switch (status) {
-      AppStatus.draft => (Colors.grey.shade200, Colors.grey.shade700),
-      AppStatus.pending => (Colors.orange.shade100, Colors.orange.shade800),
-      AppStatus.published => (Colors.green.shade100, Colors.green.shade800),
-      AppStatus.rejected => (Colors.red.shade100, Colors.red.shade800),
-      AppStatus.removed => (Colors.grey.shade300, Colors.grey.shade600),
+      AppStatus.draft => (cs.surfaceContainerHighest, cs.onSurface),
+      AppStatus.pending => (cs.secondaryContainer, cs.onSecondaryContainer),
+      AppStatus.published => (cs.tertiaryContainer, cs.onTertiaryContainer),
+      AppStatus.rejected => (cs.errorContainer, cs.onErrorContainer),
+      AppStatus.removed => (cs.surfaceContainerHigh, cs.onSurfaceVariant),
     };
 
     return Container(

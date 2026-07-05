@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/software.dart';
 import '../../models/telemetry_data.dart';
@@ -187,10 +188,11 @@ class _TelemetryListPageState extends State<TelemetryListPage>
 
   Future<void> _batchDelete() async {
     if (_selectedIds.isEmpty) return;
+    final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('确认'), content: Text('确定要批量删除这 ${_selectedIds.length} 条遥测数据吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red)))],
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: cs.error)))],
     ));
     if (confirm != true) return;
     try {
@@ -220,10 +222,11 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Future<void> _deleteDef(int id) async {
+    final cs = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('确认'), content: const Text('确定删除此指标定义吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red)))],
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: cs.error)))],
     ));
     if (confirm != true) return;
     try {
@@ -266,10 +269,14 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: Navigator.of(context).canPop()
+                ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+                : null,
             title: const Text('软件遥测'),
             actions: [
               IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
@@ -280,7 +287,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
           // Filters
           Container(
             padding: const EdgeInsets.all(12),
-            color: Colors.grey.shade50,
+            color: cs.surfaceContainerLow,
             child: Wrap(
               spacing: 16, runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -333,7 +340,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                     onPressed: _batchDelete,
                     icon: const Icon(Icons.delete, size: 16),
                     label: Text('批量删除 (${_selectedIds.length})'),
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red.shade100, foregroundColor: Colors.red),
+                    style: FilledButton.styleFrom(backgroundColor: cs.errorContainer, foregroundColor: cs.error),
                   ),
               ],
             ),
@@ -372,8 +379,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   Widget _buildDetailDialog() {
     if (_selectedItem == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -394,7 +402,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                   Expanded(
                     child: Container(
                       width: double.infinity, padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
                       child: SingleChildScrollView(
                         child: Text(const JsonEncoder.withIndent('  ').convert(_selectedItem!.content), style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                       ),
@@ -414,8 +422,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   Widget _buildIssueDialog() {
     if (_selectedIssue == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -429,11 +438,11 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
                         child: Text('${_selectedIssue!['status']}', style: const TextStyle(fontSize: 11)),
                       ),
                       const SizedBox(width: 8),
-                      Text('#${_selectedIssue!['id']}', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      Text('#${_selectedIssue!['id']}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -479,7 +488,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                                   return Container(
                                     padding: const EdgeInsets.all(8),
                                     margin: const EdgeInsets.only(bottom: 4),
-                                    decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(4)),
+                                    decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(4)),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -509,8 +518,9 @@ class _TelemetryListPageState extends State<TelemetryListPage>
 
   Widget _buildDefDialog() {
     if (!_showDefDialog) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -521,7 +531,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
               children: [
                 const Text('配置自定义统计指标'),
                 const SizedBox(height: 4),
-                Text('定义如何从上报的 JSON 数据中提取并计算统计值。', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text('定义如何从上报的 JSON 数据中提取并计算统计值。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                 const SizedBox(height: 16),
                 TextField(controller: _defLabelCtrl, decoration: const InputDecoration(labelText: '指标名称', border: OutlineInputBorder(), hintText: '如: 平均FPS')),
                 const SizedBox(height: 12),
@@ -566,14 +576,15 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _buildMonitorTab(ThemeData theme) {
+    final cs = theme.colorScheme;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Row(
           children: [
-            Expanded(child: _metricCard('总上报量', '${_data.length}', Icons.bar_chart, Colors.grey, '当前页面缓存数量')),
+            Expanded(child: _metricCard('总上报量', '${_data.length}', Icons.bar_chart, cs.onSurfaceVariant, '当前页面缓存数量')),
             const SizedBox(width: 16),
-            Expanded(child: _metricCard('错误日志', '$_errorCount', Icons.error_outline, Colors.red, '需关注的异常条目')),
+            Expanded(child: _metricCard('错误日志', '$_errorCount', Icons.error_outline, cs.error, '需关注的异常条目')),
           ],
         ),
         const SizedBox(height: 16),
@@ -585,13 +596,13 @@ class _TelemetryListPageState extends State<TelemetryListPage>
               children: [
                 Text('实时流水', style: theme.textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('最新的遥测数据', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text('最新的遥测数据', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                 const SizedBox(height: 12),
                 if (_data.isEmpty)
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text('等待实时数据上报...', style: TextStyle(color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+                      child: Text('等待实时数据上报...', style: TextStyle(color: cs.onSurfaceVariant, fontStyle: FontStyle.italic)),
                     ),
                   )
                 else
@@ -599,22 +610,22 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: cs.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: cs.outlineVariant),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: d.dataType == 'trace' ? Colors.blue.shade50 : d.dataType == 'metric' ? Colors.green.shade50 : Colors.grey.shade50,
+                            color: d.dataType == 'trace' ? cs.primaryContainer : d.dataType == 'metric' ? cs.tertiaryContainer : cs.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
                             d.dataType == 'trace' ? Icons.history : d.dataType == 'metric' ? Icons.show_chart : Icons.terminal,
                             size: 16,
-                            color: d.dataType == 'trace' ? Colors.blue : d.dataType == 'metric' ? Colors.green : Colors.grey,
+                            color: d.dataType == 'trace' ? cs.primary : d.dataType == 'metric' ? cs.tertiary : cs.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -628,16 +639,16 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                                   const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                    decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3)),
+                                    decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(3)),
                                     child: Text(d.version, style: const TextStyle(fontSize: 10)),
                                   ),
                                 ],
                               ),
-                              Text(_summary(d.content), style: TextStyle(color: Colors.grey.shade600, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(_summary(d.content), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
-                        Text(_formatTime(d.timestamp), style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                        Text(_formatTime(d.timestamp), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
                       ],
                     ),
                   )),
@@ -650,21 +661,22 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _buildIssuesTab(ThemeData theme) {
+    final cs = theme.colorScheme;
     if (_filterSoftware == 'all') {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey.shade300),
+            Icon(Icons.error_outline, size: 48, color: cs.surfaceContainerHigh),
             const SizedBox(height: 12),
-            Text('请先选择一个软件以查看异常聚类。', style: TextStyle(color: Colors.grey.shade500)),
+            Text('请先选择一个软件以查看异常聚类。', style: TextStyle(color: cs.onSurfaceVariant)),
           ],
         ),
       );
     }
     if (_loadingIssues) return const Center(child: CircularProgressIndicator());
     if (_issues.isEmpty) {
-      return Center(child: Text('未发现异常聚类', style: TextStyle(color: Colors.grey.shade500)));
+      return Center(child: Text('未发现异常聚类', style: TextStyle(color: cs.onSurfaceVariant)));
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -688,19 +700,19 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: issue['priority'] == 'critical' ? Colors.red.shade50 : Colors.grey.shade100,
+                                color: issue['priority'] == 'critical' ? cs.errorContainer : cs.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text('${issue['priority'] ?? 'N/A'}', style: TextStyle(fontSize: 10, color: issue['priority'] == 'critical' ? Colors.red : Colors.grey)),
+                              child: Text('${issue['priority'] ?? 'N/A'}', style: TextStyle(fontSize: 10, color: issue['priority'] == 'critical' ? cs.error : cs.onSurfaceVariant)),
                             ),
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                              decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
                               child: Text('${issue['status'] ?? 'N/A'}', style: const TextStyle(fontSize: 10)),
                             ),
                             const SizedBox(width: 6),
-                            Text('#${issue['id']}', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                            Text('#${issue['id']}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -729,6 +741,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _buildDataTab(ThemeData theme) {
+    final cs = theme.colorScheme;
     return Column(
       children: [
         if (_data.isNotEmpty)
@@ -738,7 +751,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
               children: [
                 Checkbox(value: _allSelected, onChanged: (_) => _toggleSelectAll()),
                 const SizedBox(width: 8),
-                Text('${_data.length} 条记录', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text('${_data.length} 条记录', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
               ],
             ),
           ),
@@ -746,7 +759,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
           child: _loadingData
               ? const Center(child: CircularProgressIndicator())
               : _data.isEmpty
-                  ? Center(child: Text('暂无遥测数据', style: TextStyle(color: Colors.grey.shade500)))
+                  ? Center(child: Text('暂无遥测数据', style: TextStyle(color: cs.onSurfaceVariant)))
                   : SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
@@ -765,7 +778,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                           DataCell(Text(d.softwareName)),
                           DataCell(Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(3)),
+                            decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(3)),
                             child: Text(d.dataType.toUpperCase(), style: const TextStyle(fontSize: 10)),
                           )),
                           DataCell(Text('${d.environment} / ${d.version}', style: const TextStyle(fontSize: 12))),
@@ -786,14 +799,15 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _buildStatsTab(ThemeData theme) {
+    final cs = theme.colorScheme;
     if (_filterSoftware == 'all') {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart, size: 48, color: Colors.grey.shade300),
+            Icon(Icons.bar_chart, size: 48, color: cs.surfaceContainerHigh),
             const SizedBox(height: 12),
-            Text('请先在上方筛选器中选择一个具体的软件以查看统计分析。', style: TextStyle(color: Colors.grey.shade500)),
+            Text('请先在上方筛选器中选择一个具体的软件以查看统计分析。', style: TextStyle(color: cs.onSurfaceVariant)),
           ],
         ),
       );
@@ -813,7 +827,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                     children: [
                       Text('${_stats!['unique_devices'] ?? 0}', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                       const SizedBox(height: 8),
-                      Text('累计唯一用户 (设备)', style: TextStyle(color: Colors.grey.shade600)),
+                      Text('累计唯一用户 (设备)', style: TextStyle(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -879,7 +893,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: ((ver['count'] as num?)?.toDouble() ?? 0) / ((_stats!['total_count'] as num?)?.toDouble() ?? 1),
-                          color: Colors.blue,
+                          color: cs.primary,
                         ),
                       ],
                     ),
@@ -910,13 +924,13 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                               if (_canEdit)
                                 InkWell(
                                   onTap: () => _deleteDef(metric['id'] as int),
-                                  child: Icon(Icons.delete, size: 14, color: Colors.red.shade400),
+                                  child: Icon(Icons.delete, size: 14, color: cs.error),
                                 ),
                             ],
                           ),
-                          Text('${metric['aggregation'] ?? ''}', style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                          Text('${metric['aggregation'] ?? ''}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
                           const SizedBox(height: 8),
-                          Text('${metric['value'] ?? 'N/A'}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+                          Text('${metric['value'] ?? 'N/A'}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.primary)),
                         ],
                       ),
                     ),
@@ -939,7 +953,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.add, size: 32, color: Colors.grey.shade400),
+                            Icon(Icons.add, size: 32, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
                             const Text('添加自定义指标', style: TextStyle(fontSize: 12)),
                           ],
                         ),
@@ -954,6 +968,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _metricCard(String title, String value, IconData icon, Color color, String subtitle) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -964,12 +979,12 @@ class _TelemetryListPageState extends State<TelemetryListPage>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                Icon(icon, size: 18, color: Colors.grey),
+                Icon(icon, size: 18, color: cs.onSurfaceVariant),
               ],
             ),
             const SizedBox(height: 8),
             Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-            Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+            Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
           ],
         ),
       ),
@@ -977,14 +992,15 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _statBox(String label, String value) {
+    final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(6)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+            Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
             Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ],
         ),
@@ -993,11 +1009,12 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   }
 
   Widget _detailRow(String label, String value) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Text('$label: ', style: TextStyle(color: Colors.grey.shade600)),
+          Text('$label: ', style: TextStyle(color: cs.onSurfaceVariant)),
           Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
         ],
       ),

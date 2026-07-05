@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/notification.dart';
 import '../../providers/auth_provider.dart';
@@ -66,7 +67,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
 
   String _typeName(String type) => type == 'invitation' ? '团队邀请' : '系统通知';
 
-  Color _typeColor(String type) => type == 'invitation' ? Colors.blue : Colors.grey;
+  Color _typeColor(ColorScheme cs, String type) => type == 'invitation' ? cs.primary : cs.onSurfaceVariant;
 
   String _formatDate(String date) {
     try {
@@ -80,8 +81,12 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+            : null,
         title: const Text('通知中心'),
         actions: [
           if (_hasUnread)
@@ -102,9 +107,9 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.notifications_off, size: 48, color: Colors.grey.shade300),
+                      Icon(Icons.notifications_off, size: 48, color: cs.surfaceContainerHigh),
                       const SizedBox(height: 12),
-                      Text('暂无任何通知', style: TextStyle(color: Colors.grey.shade500)),
+                      Text('暂无任何通知', style: TextStyle(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -126,19 +131,19 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: _typeColor(n.type).withValues(alpha: 0.1),
+                                    color: _typeColor(cs, n.type).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Text(_typeName(n.type), style: TextStyle(fontSize: 12, color: _typeColor(n.type))),
+                                  child: Text(_typeName(n.type), style: TextStyle(fontSize: 12, color: _typeColor(cs, n.type))),
                                 ),
                                 const Spacer(),
-                                Text(_formatDate(n.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                Text(_formatDate(n.createdAt), style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Text(n.title, style: theme.textTheme.titleMedium),
                             const SizedBox(height: 4),
-                            Text(n.content, style: TextStyle(color: Colors.grey.shade600)),
+                            Text(n.content, style: TextStyle(color: cs.onSurfaceVariant)),
                             const SizedBox(height: 12),
                             if (n.type == 'invitation' && n.status == 'pending')
                               Row(
@@ -159,17 +164,17 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             else if (n.status == 'accepted')
                               Row(
                                 children: [
-                                  Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
+                                  Icon(Icons.check_circle, size: 16, color: cs.tertiary),
                                   const SizedBox(width: 4),
-                                  Text('已接受', style: TextStyle(color: Colors.green.shade600)),
+                                  Text('已接受', style: TextStyle(color: cs.tertiary)),
                                 ],
                               )
                             else if (n.status == 'rejected')
                               Row(
                                 children: [
-                                  Icon(Icons.cancel, size: 16, color: Colors.grey.shade500),
+                                  Icon(Icons.cancel, size: 16, color: cs.onSurfaceVariant),
                                   const SizedBox(width: 4),
-                                  Text('已拒绝', style: TextStyle(color: Colors.grey.shade500)),
+                                  Text('已拒绝', style: TextStyle(color: cs.onSurfaceVariant)),
                                 ],
                               )
                             else if (!n.isRead)

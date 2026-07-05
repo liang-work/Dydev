@@ -55,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
 
+    // Load cached user immediately for fast startup.
     try {
       _user = await DatabaseService.getUser();
       _status = AuthStatus.authenticated;
@@ -63,6 +64,19 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
+
+    // Background refresh: validate token and fetch fresh user data.
+    if (_status == AuthStatus.authenticated) {
+      try {
+        final fresh = await _apiService.getUserProfile();
+        await DatabaseService.saveUser(fresh);
+        _user = fresh;
+        notifyListeners();
+      } catch (e, s) {
+        LoggerService.e('AuthProvider', 'background user refresh failed', e, s);
+        // Keep cached user if refresh fails.
+      }
+    }
   }
 
   // ---- Login via access token ----
@@ -85,6 +99,12 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  /// Update the local user object (used by profile page after save).
+  void updateUser(User user) {
+    _user = user;
+    notifyListeners();
   }
 
   // ---- Logout ----

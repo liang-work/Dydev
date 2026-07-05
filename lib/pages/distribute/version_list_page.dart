@@ -217,7 +217,7 @@ class _VersionListPageState extends State<VersionListPage> {
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('确认'), content: const Text('确定要删除这个版本吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red)))],
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))],
     ));
     if (confirm != true) return;
     try {
@@ -370,13 +370,13 @@ class _VersionListPageState extends State<VersionListPage> {
     return map[s] ?? s;
   }
 
-  Color _statusColor(String s) {
+  Color _statusColor(ColorScheme cs, String s) {
     switch (s) {
-      case 'released': return Colors.green;
-      case 'draft': return Colors.orange;
-      case 'testing': return Colors.blue;
-      case 'deprecated': return Colors.red;
-      default: return Colors.grey;
+      case 'released': return cs.tertiary;
+      case 'draft': return cs.secondary;
+      case 'testing': return cs.primary;
+      case 'deprecated': return cs.error;
+      default: return cs.onSurfaceVariant;
     }
   }
 
@@ -399,8 +399,12 @@ class _VersionListPageState extends State<VersionListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(children: [Scaffold(
       appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+            : null,
         title: Text('${_software?.name ?? ''} - 版本管理'),
         actions: [
           FilledButton.tonalIcon(
@@ -418,9 +422,9 @@ class _VersionListPageState extends State<VersionListPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.tag, size: 48, color: Colors.grey.shade300),
+                      Icon(Icons.tag, size: 48, color: cs.surfaceContainerHigh),
                       const SizedBox(height: 12),
-                      Text('还没有版本，点击上方按钮发布', style: TextStyle(color: Colors.grey.shade500)),
+                      Text('还没有版本，点击上方按钮发布', style: TextStyle(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -441,11 +445,11 @@ class _VersionListPageState extends State<VersionListPage> {
                                 Container(
                                   width: 36, height: 36,
                                   decoration: BoxDecoration(
-                                    color: v.versionType == 'major' ? Colors.red.shade50 : v.versionType == 'minor' ? Colors.blue.shade50 : Colors.green.shade50,
+                                    color: v.versionType == 'major' ? cs.errorContainer : v.versionType == 'minor' ? cs.primaryContainer : cs.tertiaryContainer,
                                     borderRadius: BorderRadius.circular(18),
                                   ),
                                   child: Icon(Icons.tag, size: 18,
-                                      color: v.versionType == 'major' ? Colors.red : v.versionType == 'minor' ? Colors.blue : Colors.green),
+                                       color: v.versionType == 'major' ? cs.error : v.versionType == 'minor' ? cs.primary : cs.tertiary),
                                 ),
                                 const SizedBox(width: 12),
                                 Text('v${v.version}', style: theme.textTheme.titleMedium),
@@ -453,24 +457,24 @@ class _VersionListPageState extends State<VersionListPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: _statusColor(v.status).withValues(alpha: 0.1),
+                                    color: _statusColor(cs, v.status).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Text(_statusLabel(v.status), style: TextStyle(fontSize: 11, color: _statusColor(v.status))),
+                                  child: Text(_statusLabel(v.status), style: TextStyle(fontSize: 11, color: _statusColor(cs, v.status))),
                                 ),
                                 if (v.channelName != null) ...[
                                   const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                                    decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
                                     child: Text(v.channelName!, style: const TextStyle(fontSize: 11)),
                                   ),
                                 ],
                                 if (v.isAbTest)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(4)),
-                                    child: const Text('AB测试', style: TextStyle(fontSize: 11, color: Colors.purple)),
+                                    decoration: BoxDecoration(color: cs.secondaryContainer, borderRadius: BorderRadius.circular(4)),
+                                    child: Text('AB测试', style: TextStyle(fontSize: 11, color: cs.secondary)),
                                   ),
                                 const Spacer(),
                                 if (v.status == 'draft')
@@ -502,14 +506,14 @@ class _VersionListPageState extends State<VersionListPage> {
                                     const PopupMenuItem(value: 'edit', child: Text('编辑')),
                                     if (v.status == 'released')
                                       const PopupMenuItem(value: 'deprecate', child: Text('废弃')),
-                                    const PopupMenuItem(value: 'delete', child: Text('删除', style: TextStyle(color: Colors.red))),
+                                    PopupMenuItem(value: 'delete', child: Text('删除', style: TextStyle(color: cs.error))),
                                   ],
                                 ),
                               ],
                             ),
                             if (v.title.isNotEmpty) ...[
                               const SizedBox(height: 8),
-                              Text(v.title, style: TextStyle(color: Colors.grey.shade600)),
+                              Text(v.title, style: TextStyle(color: cs.onSurfaceVariant)),
                             ],
                             const SizedBox(height: 8),
                             Row(
@@ -530,7 +534,7 @@ class _VersionListPageState extends State<VersionListPage> {
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
                                 child: Text(v.directDownloadUrl, style: const TextStyle(fontFamily: 'monospace', fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ),
                             ],
@@ -542,7 +546,7 @@ class _VersionListPageState extends State<VersionListPage> {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(3)),
+                                      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(3)),
                                       child: Text('${a.os}/${a.arch}', style: const TextStyle(fontSize: 10)),
                                     ),
                                     const SizedBox(width: 8),
@@ -570,8 +574,9 @@ class _VersionListPageState extends State<VersionListPage> {
   Widget _buildDialogOverlay() {
     if (!_showDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -633,7 +638,7 @@ class _VersionListPageState extends State<VersionListPage> {
                   )).toList(),
                 ),
                 if (_channels.isEmpty)
-                  Text('请先创建渠道', style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+                  Text('请先创建渠道', style: TextStyle(color: cs.error, fontSize: 12)),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _formTitleCtrl,
@@ -731,7 +736,7 @@ class _VersionListPageState extends State<VersionListPage> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(border: Border.all(color: cs.outlineVariant), borderRadius: BorderRadius.circular(8)),
                     child: Column(
                       children: [
                         Row(
@@ -739,7 +744,7 @@ class _VersionListPageState extends State<VersionListPage> {
                             Text('资源 #${i + 1}', style: const TextStyle(fontWeight: FontWeight.w500)),
                             const Spacer(),
                             IconButton(
-                              icon: Icon(Icons.delete, size: 16, color: Colors.red.shade400),
+                              icon: Icon(Icons.delete, size: 16, color: cs.error),
                               onPressed: () => _removeAsset(i),
                             ),
                           ],
@@ -775,13 +780,13 @@ class _VersionListPageState extends State<VersionListPage> {
                             ),
                             const SizedBox(width: 4),
                             IconButton(
-                              icon: Icon(Icons.storage, size: 16, color: Colors.grey.shade600),
+                              icon: Icon(Icons.storage, size: 16, color: cs.onSurfaceVariant),
                               onPressed: () => _openStorageSelector(i),
                               tooltip: '从存储选择',
                               visualDensity: VisualDensity.compact,
                             ),
                             IconButton(
-                              icon: Icon(Icons.code, size: 16, color: Colors.grey.shade600),
+                              icon: Icon(Icons.code, size: 16, color: cs.onSurfaceVariant),
                               onPressed: () => _openGithubSelector(i),
                               tooltip: 'GitHub Release',
                               visualDensity: VisualDensity.compact,
@@ -818,6 +823,7 @@ class _VersionListPageState extends State<VersionListPage> {
 
   Widget _buildGrayDialog() {
     if (!_showGrayDialog) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Dialog(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -838,7 +844,7 @@ class _VersionListPageState extends State<VersionListPage> {
             ),
             Text(
               _grayPercentage == 0 ? '不发布' : _grayPercentage == 100 ? '全量发布' : '仅 ${_grayPercentage.round()}% 的用户会收到更新',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 20),
             Row(
@@ -857,8 +863,9 @@ class _VersionListPageState extends State<VersionListPage> {
 
   Widget _buildStorageSelector() {
     if (!_showStorageSelector) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -886,7 +893,7 @@ class _VersionListPageState extends State<VersionListPage> {
                       child: _loadingStorageFiles
                           ? const Center(child: CircularProgressIndicator())
                           : _storageFiles.isEmpty
-                              ? Center(child: Text('当前目录为空', style: TextStyle(color: Colors.grey.shade500)))
+                              ? Center(child: Text('当前目录为空', style: TextStyle(color: cs.onSurfaceVariant)))
                               : ListView.builder(
                                   itemCount: _storageFiles.length,
                                   itemBuilder: (_, i) {
@@ -930,8 +937,9 @@ class _VersionListPageState extends State<VersionListPage> {
 
   Widget _buildGithubSelector() {
     if (!_showGithubSelector) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -948,9 +956,9 @@ class _VersionListPageState extends State<VersionListPage> {
                     Center(
                       child: Column(
                         children: [
-                          Icon(Icons.code, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.code, size: 48, color: cs.surfaceContainerHigh),
                           const SizedBox(height: 8),
-                          Text('请先在设置中绑定 GitHub 账号', style: TextStyle(color: Colors.grey.shade500)),
+                          Text('请先在设置中绑定 GitHub 账号', style: TextStyle(color: cs.onSurfaceVariant)),
                           const SizedBox(height: 12),
                           OutlinedButton(
                             onPressed: () {
@@ -976,7 +984,7 @@ class _VersionListPageState extends State<VersionListPage> {
                       const SizedBox(height: 12),
                       Expanded(
                         child: _githubReleases.isEmpty
-                            ? Center(child: Text('暂无 Release', style: TextStyle(color: Colors.grey.shade500)))
+                            ? Center(child: Text('暂无 Release', style: TextStyle(color: cs.onSurfaceVariant)))
                             : ListView.builder(
                                 itemCount: _githubReleases.length,
                                 itemBuilder: (_, i) {
@@ -1000,7 +1008,7 @@ class _VersionListPageState extends State<VersionListPage> {
                                           children: [
                                             Text(tag, style: const TextStyle(fontWeight: FontWeight.w600)),
                                             if (name.isNotEmpty) Text(name, style: const TextStyle(fontSize: 13)),
-                                            Text('${assets.length} 个附件', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                            Text('${assets.length} 个附件', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                           ],
                                         ),
                                       ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/config_item.dart';
 import '../../models/software.dart';
@@ -157,10 +158,14 @@ class _ConfigListPageState extends State<ConfigListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: Navigator.of(context).canPop()
+                ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+                : null,
             title: const Text('云端配置'),
             actions: [
               if (_canEdit)
@@ -175,7 +180,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Colors.grey.shade50,
+                color: cs.surfaceContainerLow,
                 child: Row(
                   children: [
                     const Text('所属软件: ', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -197,7 +202,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
                 child: _loadingItems
                     ? const Center(child: CircularProgressIndicator())
                     : _items.isEmpty
-                        ? Center(child: Text('暂无配置项', style: TextStyle(color: Colors.grey.shade500)))
+                        ? Center(child: Text('暂无配置项', style: TextStyle(color: cs.onSurfaceVariant)))
                         : SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: DataTable(
@@ -225,10 +230,10 @@ class _ConfigListPageState extends State<ConfigListPage> {
                                   DataCell(Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: (isActive ? Colors.green : Colors.grey).withValues(alpha: 0.15),
+                                      color: isActive ? cs.tertiaryContainer : cs.surfaceContainerHighest,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: Text(isActive ? '已启用' : '已禁用', style: TextStyle(color: isActive ? Colors.green : Colors.grey, fontSize: 12)),
+                                    child: Text(isActive ? '已启用' : '已禁用', style: TextStyle(color: isActive ? cs.tertiary : cs.onSurfaceVariant, fontSize: 12)),
                                   )),
                                   DataCell(Text(_formatDate(item.updatedAt), style: const TextStyle(fontSize: 12))),
                                   DataCell(_canEdit
@@ -236,10 +241,10 @@ class _ConfigListPageState extends State<ConfigListPage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () => _openEdit(item)),
-                                            IconButton(icon: Icon(Icons.delete, size: 18, color: Colors.red.shade400), onPressed: () => _delete(item.id)),
+                                            IconButton(icon: Icon(Icons.delete, size: 18, color: cs.error), onPressed: () => _delete(item.id)),
                                           ],
                                         )
-                                      : Text('无权限', style: TextStyle(color: Colors.grey.shade500, fontStyle: FontStyle.italic))),
+                                      : Text('无权限', style: TextStyle(color: cs.onSurfaceVariant, fontStyle: FontStyle.italic))),
                                 ]);
                               }).toList(),
                             ),
@@ -259,8 +264,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
   Widget _buildDialogOverlay() {
     if (!_showDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
@@ -273,7 +279,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
                 children: [
                   Text(_editingItem != null ? '编辑配置' : '新增配置', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 4),
-                  Text('配置变更将通过 WebSocket 实时推送至在线客户端。', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  Text('配置变更将通过 WebSocket 实时推送至在线客户端。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                   const SizedBox(height: 20),
                   TextField(controller: _formKeyCtrl, decoration: const InputDecoration(labelText: '配置键 (Key)', border: OutlineInputBorder(), helperText: '例如: server_url, enable_feature_x'), enabled: _editingItem == null),
                   const SizedBox(height: 16),

@@ -25,9 +25,9 @@ class MyAppsSection extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.apps_outlined, size: 48, color: Colors.grey.shade300),
+                  Icon(Icons.apps_outlined, size: 48, color: Theme.of(context).colorScheme.surfaceContainerHigh),
                   const SizedBox(height: 8),
-                  Text('暂无应用', style: TextStyle(color: Colors.grey.shade500)),
+                  Text('暂无应用', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -37,13 +37,13 @@ class MyAppsSection extends StatelessWidget {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade200),
+              side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: apps.length,
-              separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
+              separatorBuilder: (_, _) => Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
               itemBuilder: (context, index) => MyAppTile(app: apps[index]),
             ),
           ),

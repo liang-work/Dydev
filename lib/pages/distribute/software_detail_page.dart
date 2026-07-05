@@ -147,7 +147,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
         content: Text('确定要重置$name吗？重置后旧的$name将立即失效！'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('重置', style: TextStyle(color: Colors.orange))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('重置', style: TextStyle(color: Theme.of(ctx).colorScheme.secondary))),
         ],
       ),
     );
@@ -199,7 +199,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
       title: const Text('确认删除'), content: const Text('确定要删除这个渠道吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red)))],
+        TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))],
     ));
     if (confirm != true) return;
     try {
@@ -252,10 +252,14 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     if (_loading) return Scaffold(appBar: AppBar(title: const Text('软件详情')), body: const Center(child: CircularProgressIndicator()));
 
     return Stack(children: [Scaffold(
       appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+            : null,
         title: Text(_software?.name ?? '软件详情'),
         actions: [
           IconButton(
@@ -263,7 +267,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
             onPressed: () => setState(() => _showEditDialog = true),
           ),
           IconButton(
-            icon: Icon(Icons.delete, color: Colors.red.shade400),
+            icon: Icon(Icons.delete, color: cs.error),
             onPressed: _deleteSoftware,
           ),
         ],
@@ -293,7 +297,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(_software!.name, style: theme.textTheme.titleLarge),
-                              Text(_software!.slug, style: TextStyle(color: Colors.grey.shade600)),
+                              Text(_software!.slug, style: TextStyle(color: cs.onSurfaceVariant)),
                             ],
                           ),
                         ),
@@ -326,11 +330,11 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                       const SizedBox(height: 8),
                       _tokenSection('主访问令牌', _software!.token, 'main', Icons.vpn_key, theme.colorScheme.primary),
                       if (_software!.telemetryToken != null)
-                        _tokenSection('遥测数据令牌', _software!.telemetryToken!, 'telemetry', Icons.analytics, Colors.blue),
+                        _tokenSection('遥测数据令牌', _software!.telemetryToken!, 'telemetry', Icons.analytics, cs.primary),
                       if (_software!.announcementToken != null)
-                        _tokenSection('公告令牌', _software!.announcementToken!, 'announcement', Icons.campaign, Colors.green),
+                        _tokenSection('公告令牌', _software!.announcementToken!, 'announcement', Icons.campaign, cs.tertiary),
                       if (_software!.updateToken != null)
-                        _tokenSection('更新检查令牌', _software!.updateToken!, 'update', Icons.download, Colors.purple),
+                        _tokenSection('更新检查令牌', _software!.updateToken!, 'update', Icons.download, cs.primary),
                     ],
                   ],
                 ),
@@ -367,7 +371,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                               dense: true,
                               leading: Container(
                                 width: 32, height: 32,
-                                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
+                                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(6)),
                                 child: const Icon(Icons.layers, size: 16),
                               ),
                               title: Text(c.name, style: const TextStyle(fontSize: 14)),
@@ -375,20 +379,20 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: c.isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: c.isActive ? cs.tertiaryContainer : cs.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(c.isActive ? '启用' : '禁用', style: TextStyle(fontSize: 11, color: c.isActive ? cs.tertiary : cs.onSurfaceVariant)),
                                     ),
-                                    child: Text(c.isActive ? '启用' : '禁用', style: TextStyle(fontSize: 11, color: c.isActive ? Colors.green : Colors.grey)),
-                                  ),
                                   IconButton(
                                     icon: const Icon(Icons.edit, size: 16),
                                     onPressed: () => _openChannelDialog(c),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete, size: 16, color: Colors.red.shade400),
+                                    icon: Icon(Icons.delete, size: 16, color: cs.error),
                                     onPressed: () => _deleteChannel(c.id),
                                   ),
                                 ],
@@ -437,19 +441,19 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                                 children: [
                                   Text(m.username, style: const TextStyle(fontSize: 14)),
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(3),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: cs.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(m.role, style: const TextStyle(fontSize: 10)),
                                     ),
-                                    child: Text(m.role, style: const TextStyle(fontSize: 10)),
-                                  ),
                                 ],
                               ),
                               subtitle: Text(m.email, style: const TextStyle(fontSize: 12)),
                               trailing: IconButton(
-                                icon: Icon(Icons.exit_to_app, size: 16, color: Colors.red.shade400),
+                                icon: Icon(Icons.exit_to_app, size: 16, color: cs.error),
                                 tooltip: '移除',
                                 onPressed: () => _removeMember(m),
                               ),
@@ -471,12 +475,12 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                   children: [
                     Text('客户端 API', style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text('在客户端使用以下接口检查更新', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text('在客户端使用以下接口检查更新', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
                       child: SelectableText(
                         'GET https://dev-api.dy.ci/api/distribute/check/${_software!.slug}/?version=1.0.0&os=win10&arch=x64&channel=stable',
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
@@ -499,8 +503,9 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   Widget _buildEditDialog() {
     if (!_showEditDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -547,8 +552,9 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   Widget _buildChannelDialog() {
     if (!_showChannelDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -591,8 +597,9 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   Widget _buildMemberDialog() {
     if (!_showMemberDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: Padding(
@@ -648,11 +655,12 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   }
 
   Widget _infoCol(String label, String value) {
+    final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+          Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
@@ -661,11 +669,12 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   }
 
   Widget _tokenSection(String label, String token, String type, IconData icon, Color color) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(8)),
         child: Row(
           children: [
             Icon(icon, size: 20, color: color),
@@ -680,7 +689,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3)),
+                        decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(3)),
                         child: Text(type, style: const TextStyle(fontSize: 9)),
                       ),
                     ],

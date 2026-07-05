@@ -182,7 +182,7 @@ class _StorageListPageState extends State<StorageListPage> {
         content: const Text('确定要删除这个存储配置吗？'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error))),
         ],
       ),
     );
@@ -207,12 +207,12 @@ class _StorageListPageState extends State<StorageListPage> {
     }
   }
 
-  Color _storageColor(String type) {
+  Color _storageColor(ColorScheme cs, String type) {
     switch (type) {
-      case 's3': return Colors.orange;
-      case 'webdav': return Colors.blue;
-      case 'direct': return Colors.green;
-      default: return Colors.grey;
+      case 's3': return cs.secondary;
+      case 'webdav': return cs.primary;
+      case 'direct': return cs.tertiary;
+      default: return cs.onSurfaceVariant;
     }
   }
 
@@ -230,10 +230,14 @@ class _StorageListPageState extends State<StorageListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: Navigator.of(context).canPop()
+                ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+                : null,
             title: const Text('存储管理'),
             actions: [
               FilledButton.tonalIcon(
@@ -251,9 +255,9 @@ class _StorageListPageState extends State<StorageListPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.storage, size: 48, color: Colors.grey.shade300),
+                      Icon(Icons.storage, size: 48, color: cs.surfaceContainerHigh),
                       const SizedBox(height: 12),
-                      Text('还没有存储配置，点击上方按钮添加', style: TextStyle(color: Colors.grey.shade500)),
+                      Text('还没有存储配置，点击上方按钮添加', style: TextStyle(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -273,10 +277,10 @@ class _StorageListPageState extends State<StorageListPage> {
                               Container(
                                 width: 40, height: 40,
                                 decoration: BoxDecoration(
-                                    color: _storageColor(s.storageType).withValues(alpha: 0.1),
+                                    color: _storageColor(cs, s.storageType).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Icon(_storageIcon(s.storageType), color: _storageColor(s.storageType)),
+                                child: Icon(_storageIcon(s.storageType), color: _storageColor(cs, s.storageType)),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -290,16 +294,16 @@ class _StorageListPageState extends State<StorageListPage> {
                                   Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: (s.isActive ? Colors.green : Colors.grey).withValues(alpha: 0.1),
+                                              color: s.isActive ? cs.tertiaryContainer : cs.surfaceContainerHighest,
                                               borderRadius: BorderRadius.circular(4),
                                             ),
-                                            child: Text(s.isActive ? '启用' : '禁用', style: TextStyle(fontSize: 11, color: s.isActive ? Colors.green : Colors.grey)),
+                                            child: Text(s.isActive ? '启用' : '禁用', style: TextStyle(fontSize: 11, color: s.isActive ? cs.tertiary : cs.onSurfaceVariant)),
                                         ),
                                         const SizedBox(width: 6),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
+                                            color: cs.surfaceContainerHighest,
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: Text(_linkTypeName(s.defaultLinkType), style: const TextStyle(fontSize: 11)),
@@ -307,15 +311,15 @@ class _StorageListPageState extends State<StorageListPage> {
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(_storageDesc(s), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                    Text(_storageDesc(s), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
                                         if (s.storageType == 's3' && s.s3Bucket != null)
                                           Text('${s.s3Bucket} ${s.s3Endpoint != null && s.s3Endpoint!.isNotEmpty ? '@ ${s.s3Endpoint}' : '@ AWS S3'}',
-                                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                         if (s.storageType == 'webdav' && s.webdavUrl != null)
-                                          Text(s.webdavUrl!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                          Text(s.webdavUrl!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                                         if (s.cdnDomain != null && s.cdnDomain!.isNotEmpty)
                                           Text('  CDN: ${s.cdnDomain}', style: TextStyle(fontSize: 12, color: theme.colorScheme.primary)),
                                       ],
@@ -333,7 +337,7 @@ class _StorageListPageState extends State<StorageListPage> {
                                 onPressed: () => _openEdit(s),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, size: 18, color: Colors.red.shade400),
+                                icon: Icon(Icons.delete, size: 18, color: cs.error),
                                 onPressed: () => _delete(s.id),
                               ),
                             ],
@@ -352,8 +356,9 @@ class _StorageListPageState extends State<StorageListPage> {
   Widget _buildDialogOverlay() {
     if (!_showDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(

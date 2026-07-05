@@ -18,6 +18,8 @@ import 'pages/store/app_list_page.dart';
 import 'pages/telemetry/telemetry_list_page.dart';
 import 'pages/config/config_list_page.dart';
 import 'pages/settings/profile_page.dart';
+import 'pages/settings/app_settings_page.dart';
+import 'providers/theme_provider.dart';
 
 /// Shell route: wraps all authenticated pages inside the sidebar layout.
 class _DashboardShell extends StatelessWidget {
@@ -41,6 +43,7 @@ class DevPlatformApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final themeProv = context.watch<ThemeProvider>();
 
     final router = GoRouter(
       navigatorKey: navigatorKey,
@@ -71,6 +74,7 @@ class DevPlatformApp extends StatelessWidget {
             GoRoute(path: '/dashboard/apps', name: 'apps', builder: (_, _) => const AppListPage()),
             GoRoute(path: '/dashboard/config', name: 'config', builder: (_, _) => const ConfigListPage()),
             GoRoute(path: '/dashboard/settings', name: 'settings', builder: (_, _) => const ProfilePage()),
+            GoRoute(path: '/dashboard/app-settings', name: 'app_settings', builder: (_, _) => const AppSettingsPage()),
           ],
         ),
       ],
@@ -83,6 +87,7 @@ class DevPlatformApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      themeMode: themeProv.mode,
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF6366F1),
@@ -99,6 +104,46 @@ class DevPlatformApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: Colors.grey.shade200),
           ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xFF6366F1),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          backgroundColor: Color(0xFF1E1E1E),
+          foregroundColor: Color(0xFFE0E0E0),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade800),
+          ),
+        ),
+        dividerTheme: DividerThemeData(color: Colors.grey.shade800),
+        dividerColor: Colors.grey.shade800,
+        dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF1E1E1E)),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade700)),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade700)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color(0xFF6366F1))),
+          filled: true,
+          fillColor: const Color(0xFF2A2A2A),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFFBDBDBD)),
+        primaryIconTheme: const IconThemeData(color: Color(0xFFBDBDBD)),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFFE0E0E0)),
+          bodyMedium: TextStyle(color: Color(0xFFE0E0E0)),
+          bodySmall: TextStyle(color: Color(0xFFBDBDBD)),
+          titleLarge: TextStyle(color: Color(0xFFFFFFFF)),
+          titleMedium: TextStyle(color: Color(0xFFFFFFFF)),
+          titleSmall: TextStyle(color: Color(0xFFFFFFFF)),
         ),
       ),
     );

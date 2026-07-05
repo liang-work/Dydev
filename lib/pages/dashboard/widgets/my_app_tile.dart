@@ -11,6 +11,7 @@ class MyAppTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ListTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -19,12 +20,12 @@ class MyAppTile extends StatelessWidget {
             : Container(
                 width: 40,
                 height: 40,
-                color: Colors.grey.shade200,
-                child: Icon(Icons.apps, color: Colors.grey.shade400),
+                color: cs.surfaceContainerHighest,
+                child: Icon(Icons.apps, color: cs.onSurfaceVariant),
               ),
       ),
       title: Text(app.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text('v${app.currentVersion}', style: TextStyle(color: Colors.grey.shade600)),
+      subtitle: Text('v${app.currentVersion}', style: TextStyle(color: cs.onSurfaceVariant)),
       trailing: StatusBadge(status: app.status),
       onTap: onTap,
     );

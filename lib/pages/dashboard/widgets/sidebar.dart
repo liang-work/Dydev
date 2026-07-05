@@ -27,7 +27,7 @@ class _NavItem extends StatelessWidget {
       fgColor = theme.colorScheme.primary;
     } else {
       bgColor = Colors.transparent;
-      fgColor = Colors.grey.shade600;
+      fgColor = theme.colorScheme.onSurfaceVariant;
     }
 
     return Padding(
@@ -68,7 +68,7 @@ class _GroupHeader extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: Colors.grey.shade500,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 0.8,
         ),
       ),
@@ -98,12 +98,13 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
 
     return Container(
       width: 240,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Colors.grey.shade200)),
+        color: theme.colorScheme.surface,
+        border: Border(right: BorderSide(color: theme.colorScheme.outlineVariant)),
       ),
       child: Column(
         children: [
@@ -112,7 +113,7 @@ class Sidebar extends StatelessWidget {
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
             ),
             child: Row(
               children: [
@@ -194,7 +195,7 @@ class Sidebar extends StatelessWidget {
           // ---- User info + Logout ----
           Container(
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
@@ -202,7 +203,7 @@ class Sidebar extends StatelessWidget {
                 // Avatar
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(26),
+                  backgroundColor: theme.colorScheme.primary.withAlpha(26),
                   child: Text(
                     (auth.user?.nickname.isNotEmpty == true
                             ? auth.user!.nickname
@@ -212,7 +213,7 @@ class Sidebar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                 ),
@@ -233,7 +234,7 @@ class Sidebar extends StatelessWidget {
                       if (auth.user?.email.isNotEmpty == true)
                         Text(
                           auth.user!.email,
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
                         ),
                     ],
@@ -241,7 +242,7 @@ class Sidebar extends StatelessWidget {
                 ),
                 // Logout button
                 IconButton(
-                  icon: Icon(Icons.logout, size: 18, color: Colors.grey.shade500),
+                  icon: Icon(Icons.logout, size: 18, color: theme.colorScheme.onSurfaceVariant),
                   onPressed: onLogout,
                   tooltip: 'sidebar.logout.tooltip'.tr(),
                   visualDensity: VisualDensity.compact,

@@ -33,6 +33,10 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final query = GoRouterState.of(context).uri.queryParameters;
+      if (query['action'] == 'create') _openCreate();
+    });
   }
 
   @override
@@ -115,7 +119,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
         content: const Text('确定要删除这个软件吗？所有版本数据也会被删除。'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error))),
         ],
       ),
     );
@@ -139,7 +143,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
         content: const Text('确定要重置该软件的访问令牌吗？重置后，旧的令牌将立即失效。'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('重置', style: TextStyle(color: Colors.orange))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('重置', style: TextStyle(color: Theme.of(ctx).colorScheme.secondary))),
         ],
       ),
     );
@@ -171,10 +175,14 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
+            leading: Navigator.of(context).canPop()
+                ? IconButton(icon: Icon(Icons.arrow_back), onPressed: () => context.pop())
+                : null,
             title: const Text('软件分发'),
             actions: [
               FilledButton.tonalIcon(
@@ -192,16 +200,19 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.inventory_2, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.inventory_2, size: 48, color: cs.surfaceContainerHigh),
                           const SizedBox(height: 12),
-                          Text('还没有软件，点击上方按钮添加', style: TextStyle(color: Colors.grey.shade500)),
+                          Text('还没有软件，点击上方按钮添加', style: TextStyle(color: cs.onSurfaceVariant)),
                         ],
                       ),
                     )
-                  : GridView.builder(
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+                        return GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.2,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: crossAxisCount == 1 ? 1.8 : 1.2,
                       ),
                       itemCount: _softwares.length,
                       itemBuilder: (_, i) {
@@ -245,17 +256,17 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(sw.name, style: theme.textTheme.titleSmall),
-                                  Text(sw.slug, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                                  Text(sw.slug, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
                                   const Spacer(),
                                   Text(sw.description.isEmpty ? '暂无描述' : sw.description,
-                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
                                   const SizedBox(height: 8),
                                   Wrap(
                                     spacing: 4, runSpacing: 4,
                                     children: [
                                       ...sw.platforms.map((p) => Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
                                         child: Text(p, style: const TextStyle(fontSize: 11)),
                                       )),
                                       if (sw.versionCount > 0)
@@ -272,7 +283,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                                       Expanded(
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(4)),
+                                          decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(4)),
                                           child: Text(sw.token, style: const TextStyle(fontFamily: 'monospace', fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
                                         ),
                                       ),
@@ -285,7 +296,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                                             if (mounted) setState(() => _copiedTokenId = null);
                                           });
                                         },
-                                        child: Icon(_copiedTokenId == sw.id ? Icons.check : Icons.copy, size: 16, color: _copiedTokenId == sw.id ? Colors.green : Colors.grey),
+                                        child: Icon(_copiedTokenId == sw.id ? Icons.check : Icons.copy, size: 16, color: _copiedTokenId == sw.id ? cs.tertiary : cs.onSurfaceVariant),
                                       ),
                                     ],
                                   ),
@@ -295,9 +306,11 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
                           ),
                         );
                       },
+                    );
+                      },
                     ),
-        ),
-        _buildDialogOverlay(),
+         ),
+         _buildDialogOverlay(),
       ],
     );
   }
@@ -305,12 +318,13 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
   Widget _buildDialogOverlay() {
     if (!_showDialog) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Material(
-      color: Colors.black26,
+      color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+            constraints: BoxConstraints(maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.85),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: SingleChildScrollView(
@@ -374,9 +388,9 @@ class _MenuItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: isDestructive ? Colors.red : null),
+        Icon(icon, size: 16, color: isDestructive ? Theme.of(context).colorScheme.error : null),
         const SizedBox(width: 8),
-        Text(label, style: isDestructive ? const TextStyle(color: Colors.red) : null),
+        Text(label, style: isDestructive ? TextStyle(color: Theme.of(context).colorScheme.error) : null),
       ],
     );
   }
