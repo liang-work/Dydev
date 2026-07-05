@@ -130,18 +130,6 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
       - name: Get dependencies
         run: flutter pub get
-      - name: Decode keystore
-        if: env.KEYSTORE_B64 != ''
-        env:
-          KEYSTORE_B64: '${{ secrets.ANDROID_KEYSTORE }}'
-        run: |
-          base64 -d > android/app/key.jks <<< "$KEYSTORE_B64"
-          cat > android/key.properties << PROPS
-          storeFile=key.jks
-          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          PROPS
       - name: Build APK
         run: flutter build apk --release --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - uses: actions/upload-artifact@v4
