@@ -1,10 +1,6 @@
 name: Build dydev
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
     inputs:
       platforms:
@@ -47,13 +43,13 @@ jobs:
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
           "@
           $iss | Out-File setup.iss -Encoding utf8
-          ISCC.exe setup.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-Windows
           path: |
             dydev-windows.zip
-            installer_output\*.exe
+            installer_output/*.exe
           if-no-files-found: warn
 
   linux:
@@ -115,7 +111,7 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE }}
         if: env.KEYSTORE_B64 != ''
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > android/key.jks
+          echo "$KEYSTORE_B64" | base64 -d > android/app/key.jks
           echo "storeFile=key.jks" > android/key.properties
           echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
