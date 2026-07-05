@@ -17,10 +17,17 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Read build config
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path config/build_config.yaml -Pattern '^version: ').Line.Split(': ')[-1]
+          $buildNumber = (Select-String -Path config/build_config.yaml -Pattern '^build_number: ').Line.Split(': ')[-1]
+          echo "BUILD_VERSION=$version" >> $env:GITHUB_ENV
+          echo "BUILD_NUMBER=$buildNumber" >> $env:GITHUB_ENV
       - name: Get dependencies
         run: flutter pub get
       - name: Build
-        run: flutter build windows --release
+        run: flutter build windows --release --build-name=$env:BUILD_VERSION --build-number=$env:BUILD_NUMBER
       - name: Create zip archive
         run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath dydev-windows.zip
       - name: Build installer (Inno Setup)
@@ -29,15 +36,14 @@ jobs:
         run: |
           choco install innosetup --no-progress -y
           $exe = "build\windows\x64\runner\Release\dydev.exe"
-          $ver = (Get-Item $exe).VersionInfo.FileVersion
           $iss = @"
           [Setup]
           AppName=dydev
-          AppVersion=$ver
+          AppVersion=$env:BUILD_VERSION
           DefaultDirName={autopf}\dydev
           DefaultGroupName=dydev
           OutputDir=installer_output
-          OutputBaseFilename=dydev-setup-$ver
+          OutputBaseFilename=dydev-setup-$env:BUILD_VERSION
           [Files]
           Source: "$exe"; DestDir: "{app}"; Flags: ignoreversion
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -60,6 +66,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Read build config
+        run: |
+          BUILD_VERSION=$(grep '^version:' config/build_config.yaml | cut -d' ' -f2)
+          BUILD_NUMBER=$(grep '^build_number:' config/build_config.yaml | cut -d' ' -f2)
+          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -67,7 +79,7 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       - name: Build
-        run: flutter build linux --release
+        run: flutter build linux --release --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-Linux
@@ -82,10 +94,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Read build config
+        run: |
+          BUILD_VERSION=$(grep '^version:' config/build_config.yaml | cut -d' ' -f2)
+          BUILD_NUMBER=$(grep '^build_number:' config/build_config.yaml | cut -d' ' -f2)
+          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
       - name: Get dependencies
         run: flutter pub get
       - name: Build
-        run: flutter build macos --release
+        run: flutter build macos --release --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-macOS
@@ -104,6 +122,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Read build config
+        run: |
+          BUILD_VERSION=$(grep '^version:' config/build_config.yaml | cut -d' ' -f2)
+          BUILD_NUMBER=$(grep '^build_number:' config/build_config.yaml | cut -d' ' -f2)
+          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
       - name: Get dependencies
         run: flutter pub get
       - name: Decode keystore
@@ -117,7 +141,7 @@ jobs:
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-Android
@@ -132,6 +156,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Read build config
+        run: |
+          BUILD_VERSION=$(grep '^version:' config/build_config.yaml | cut -d' ' -f2)
+          BUILD_NUMBER=$(grep '^build_number:' config/build_config.yaml | cut -d' ' -f2)
+          echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
       - name: Get dependencies
         run: flutter pub get
       - name: Decode certificate
@@ -176,13 +206,13 @@ jobs:
           fi
       - name: Build IPA (unsigned)
         if: env.HAS_SIGNING == '0'
-        run: flutter build ipa --release --no-codesign
+        run: flutter build ipa --release --no-codesign --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - name: Build IPA (signed)
         if: env.HAS_SIGNING == '1'
         env:
           IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
           IOS_SIGNING_CERTIFICATE: "Apple Distribution"
-        run: flutter build ipa --release
+        run: flutter build ipa --release --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
       - uses: actions/upload-artifact@v4
         with:
           name: dydev-iOS
