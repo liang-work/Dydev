@@ -49,9 +49,9 @@ class _ProfilePageState extends State<ProfilePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<AuthProvider>().user;
       if (user != null) {
-        _nicknameCtrl.text = user.nickname ?? '';
-        _phoneCtrl.text = user.phone ?? '';
-        _bioCtrl.text = user.bio ?? '';
+        _nicknameCtrl.text = user.nickname;
+        _phoneCtrl.text = user.phone;
+        _bioCtrl.text = user.bio;
       }
     });
     _loadGithub();
@@ -134,6 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('解绑'))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     setState(() => _githubUnlinking = true);
     try {
       await context.read<AuthProvider>().apiService.unbindGithub();
@@ -166,6 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('解绑'))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     setState(() => _giteaUnlinking = true);
     try {
       await context.read<AuthProvider>().apiService.unbindGitea();
@@ -222,6 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(context).colorScheme.error)))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deleteGithubMirror(id);
       _loadMirrors();
@@ -256,7 +259,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Text(user?.username?.isNotEmpty == true ? user!.username![0].toUpperCase() : 'U',
+                      child: Text(user != null && user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U',
                           style: TextStyle(fontSize: 24, color: theme.colorScheme.primary)),
                     ),
                     const SizedBox(width: 16),

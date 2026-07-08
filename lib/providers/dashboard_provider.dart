@@ -16,8 +16,7 @@ class DashboardProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  DashboardProvider({required ApiService apiService})
-      : _apiService = apiService;
+  DashboardProvider({required this._apiService});
 
   // ---- Getters ----
 

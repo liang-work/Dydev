@@ -153,6 +153,27 @@ class Sidebar extends StatelessWidget {
                   onTap: () => onNavigate('/dashboard/apps'),
                 ),
 
+                // === 开源游戏 ===
+                _GroupHeader(label: 'nav.osgames'.tr()),
+                _NavItem(
+                  icon: Icons.gamepad_outlined,
+                  label: 'nav.osgames.games'.tr(),
+                  isSelected: currentRoute == '/dashboard/osgames',
+                  onTap: () => onNavigate('/dashboard/osgames'),
+                ),
+                _NavItem(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'nav.osgames.manage'.tr(),
+                  isSelected: currentRoute.startsWith('/dashboard/osgames/manage'),
+                  onTap: () => onNavigate('/dashboard/osgames/manage'),
+                ),
+                _NavItem(
+                  icon: Icons.category_outlined,
+                  label: 'nav.osgames.categories'.tr(),
+                  isSelected: currentRoute.startsWith('/dashboard/osgames/categories'),
+                  onTap: () => onNavigate('/dashboard/osgames/categories'),
+                ),
+
                 // === 分发管理 ===
                 _GroupHeader(label: 'nav.distribution'.tr()),
                 _NavItem(

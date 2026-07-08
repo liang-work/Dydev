@@ -124,6 +124,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.deleteSoftware(id);
@@ -148,6 +149,7 @@ class _SoftwareListPageState extends State<SoftwareListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       final result = await api.resetSoftwareToken(id);

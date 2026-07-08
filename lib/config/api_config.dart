@@ -51,6 +51,17 @@ class ApiConfig {
   static const String githubReleases = '/api/github/account/releases/';
   static const String githubMirrors = '/api/github/mirrors/';
 
+  // ---- OSGames ----
+  static const String osgamesGames = '/api/osgames/games/';
+  static const String osgamesCategories = '/api/osgames/categories/';
+  static const String osgamesIssues = '/api/osgames/issues/';
+  static const String osgamesStats = '/api/osgames/stats/';
+  static const String osgamesAdminPending = '/api/osgames/admin/pending/';
+  static const String osgamesAdminApprove = '/api/osgames/admin/approve/';
+  static const String osgamesAdminReject = '/api/osgames/admin/reject/';
+  static const String osgamesAdminTakedown = '/api/osgames/admin/takedown/';
+  static const String osgamesAdminBadges = '/api/osgames/admin/badges/';
+
   // ---- Store ----
   static const String storeApps = '/api/store/apps/';
   static const String storeMyApps = '/api/store/apps/my_apps/';

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -242,7 +241,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                           onPressed: _goUp,
                         ),
                       Expanded(
-                        child: Text('路径: /${_currentPath}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                        child: Text('路径: /$_currentPath', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh),
@@ -302,10 +301,15 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                                               final api = context.read<AuthProvider>().apiService;
                                               final url = await api.generateStorageUrl(
                                                   widget.storageId, f.key, _storage?.defaultLinkType ?? 'direct');
+                                              if (!context.mounted) return;
                                               await Clipboard.setData(ClipboardData(text: url));
-                                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('链接已复制')));
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('链接已复制')));
+                                              }
                                             } catch (e) {
-                                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('生成链接失败: $e')));
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('生成链接失败: $e')));
+                                              }
                                             }
                                           },
                                         ),
@@ -336,12 +340,15 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
                                             ),
                                           );
                                           if (confirm != true) return;
+                                          if (!context.mounted) return;
                                           try {
                                             final api = context.read<AuthProvider>().apiService;
                                             await api.deleteStorageFile(widget.storageId, f.key);
                                             _loadFiles();
                                           } catch (e) {
-                                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+                                            }
                                           }
                                         },
                                       ),
@@ -384,7 +391,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _editLinkType,
+              initialValue: _editLinkType,
               decoration: const InputDecoration(labelText: '默认链接类型', border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'direct', child: Text('直接链接（带签名）')),
@@ -645,7 +652,7 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
               const SizedBox(height: 16),
             ],
             DropdownButtonFormField<String>(
-              value: _urlLinkType,
+              initialValue: _urlLinkType,
               decoration: const InputDecoration(labelText: '链接类型', border: OutlineInputBorder()),
               items: [
                 const DropdownMenuItem(value: 'direct', child: Text('直接链接（带签名）')),
