@@ -1,11 +1,16 @@
 class ApiConfig {
   static const String baseUrl = 'https://dev-api.dy.ci/';
+  static const String backendApiBase = '$baseUrl/api';
+
+  // Must match server's OIDC_REDIRECT_AFTER_AUTH.
+  static const String callbackUrl = 'https://developer.dy.ci/callback';
 
   // ---- Accounts ----
   static const String health = '/api/accounts/health/';
   static const String oidcConfig = '/api/accounts/oidc/config/';
   static const String oidcLogin = '/api/accounts/oidc/login/';
   static const String oidcCallback = '/api/accounts/oidc/callback/';
+  static const String oidcLogout = '/api/accounts/oidc/logout/';
   static const String tokenRefresh = '/api/accounts/token/refresh/';
   static const String userMe = '/api/accounts/user/me/';
   static const String userProfile = '/api/accounts/user/profile/';
