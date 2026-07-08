@@ -137,6 +137,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.deleteConfigItem(id);

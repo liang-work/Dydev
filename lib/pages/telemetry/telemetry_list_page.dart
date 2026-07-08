@@ -21,7 +21,6 @@ class _TelemetryListPageState extends State<TelemetryListPage>
   List<TelemetryData> _data = [];
   List<Map<String, dynamic>> _issues = [];
   Map<String, dynamic>? _stats;
-  List<Map<String, dynamic>> _definitions = [];
   bool _loadingData = false;
   bool _loadingStats = false;
   bool _loadingIssues = false;
@@ -127,7 +126,6 @@ class _TelemetryListPageState extends State<TelemetryListPage>
       if (_filterDataType != 'all') params['data_type'] = _filterDataType;
       final api = context.read<AuthProvider>().apiService;
       _stats = await api.getTelemetryStats(_filterSoftware, params: params);
-      _definitions = await api.getMetricDefinitions(params: {'software': _filterSoftware});
     } catch (e, s) {
       LoggerService.e('_TelemetryListPageState', 'load stats', e, s);
     }
@@ -195,6 +193,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: cs.error)))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.batchDeleteTelemetry(_selectedIds.toList());
       _selectedIds.clear();
@@ -229,6 +228,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: cs.error)))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deleteMetricDefinition(id);
       _loadStats();
@@ -538,7 +538,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                 TextField(controller: _defFieldCtrl, decoration: const InputDecoration(labelText: 'JSON 字段路径', border: OutlineInputBorder(), hintText: 'content.fps')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _defDataType,
+                  initialValue: _defDataType,
                   decoration: const InputDecoration(labelText: '数据来源类型', border: OutlineInputBorder()),
                   items: const [
                     DropdownMenuItem(value: 'metric', child: Text('Metric')),
@@ -549,7 +549,7 @@ class _TelemetryListPageState extends State<TelemetryListPage>
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _defAggregation,
+                  initialValue: _defAggregation,
                   decoration: const InputDecoration(labelText: '聚合方式', border: OutlineInputBorder()),
                   items: const [
                     DropdownMenuItem(value: 'avg', child: Text('平均值 (Avg)')),

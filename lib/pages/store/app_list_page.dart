@@ -271,6 +271,7 @@ class _AppListPageState extends State<AppListPage> {
       ],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.publishStoreApp(id);
       _load();
@@ -292,6 +293,7 @@ class _AppListPageState extends State<AppListPage> {
       ],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.unpublishStoreApp(id);
       _load();
@@ -317,6 +319,7 @@ class _AppListPageState extends State<AppListPage> {
       ],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deleteStoreApp(id);
       _load();
@@ -530,7 +533,7 @@ class _AppListPageState extends State<AppListPage> {
                     if (_formUseDistribute) ...[
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: _formSoftware,
+                        initialValue: _formSoftware,
                         decoration: const InputDecoration(labelText: '选择软件', border: OutlineInputBorder()),
                         items: _softwares.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                         onChanged: (v) { setState(() => _formSoftware = v); _onSoftwareChanged(); },
@@ -538,7 +541,7 @@ class _AppListPageState extends State<AppListPage> {
                       if (_channels.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: _formChannel,
+                          initialValue: _formChannel,
                           decoration: const InputDecoration(labelText: '选择渠道', border: OutlineInputBorder()),
                           items: _channels.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.channelType})'))).toList(),
                           onChanged: (v) { setState(() => _formChannel = v); _onChannelChanged(); },

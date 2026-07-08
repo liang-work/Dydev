@@ -15,6 +15,9 @@ import '../models/telemetry_data.dart';
 import '../models/config_item.dart';
 import '../models/github_account.dart';
 import '../models/gitea_account.dart';
+import '../models/game.dart';
+import '../models/game_category.dart';
+import '../models/game_issue.dart';
 import '../utils/http_status.dart';
 import 'auth_service.dart';
 import 'logger_service.dart';
@@ -26,9 +29,7 @@ class ApiService {
   final AuthService _authService;
   final VoidCallback? _onForceLogout;
 
-  ApiService({required AuthService authService, VoidCallback? onForceLogout})
-      : _authService = authService,
-        _onForceLogout = onForceLogout {
+  ApiService({required this._authService, this._onForceLogout}) {
     LoggerService.d(_tag, 'Initialising API service (baseUrl: ${ApiConfig.baseUrl})');
 
     _dio = Dio(BaseOptions(
@@ -543,6 +544,101 @@ class ApiService {
 
   Future<void> deleteGithubMirror(String id) async {
     await _dio.delete(ApiConfig.resourceUrl(ApiConfig.githubMirrors, id));
+  }
+
+  // ---- OSGames ----
+  Future<List<Game>> getOsgamesGames() async {
+    final response = await _dio.get(ApiConfig.osgamesGames);
+    return _unwrapList(response.data).map((j) => Game.fromJson(j)).toList();
+  }
+
+  Future<Game> getOsgamesGame(Object id) async {
+    final response = await _dio.get(ApiConfig.resourceUrl(ApiConfig.osgamesGames, id));
+    return Game.fromJson(response.data);
+  }
+
+  Future<Game> createOsgamesGame(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.osgamesGames, data: data);
+    return Game.fromJson(response.data);
+  }
+
+  Future<Game> updateOsgamesGame(Object id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.osgamesGames, id), data: data);
+    return Game.fromJson(response.data);
+  }
+
+  Future<void> deleteOsgamesGame(Object id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.osgamesGames, id));
+  }
+
+  Future<void> submitOsgamesGame(Object id) async {
+    await _dio.post(ApiConfig.actionUrl(ApiConfig.osgamesGames, id, 'submit'));
+  }
+
+  Future<Map<String, dynamic>> getOsgamesGameGiteaInfo(Object id) async {
+    final response = await _dio.get(ApiConfig.actionUrl(ApiConfig.osgamesGames, id, 'gitea-info'));
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<List<GameCategory>> getOsgamesCategories() async {
+    final response = await _dio.get(ApiConfig.osgamesCategories);
+    return _unwrapList(response.data).map((j) => GameCategory.fromJson(j)).toList();
+  }
+
+  Future<GameCategory> createOsgamesCategory(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConfig.osgamesCategories, data: data);
+    return GameCategory.fromJson(response.data);
+  }
+
+  Future<GameCategory> updateOsgamesCategory(Object id, Map<String, dynamic> data) async {
+    final response = await _dio.put(ApiConfig.resourceUrl(ApiConfig.osgamesCategories, id), data: data);
+    return GameCategory.fromJson(response.data);
+  }
+
+  Future<void> deleteOsgamesCategory(Object id) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.osgamesCategories, id));
+  }
+
+  Future<Map<String, dynamic>> getOsgamesStats() async {
+    final response = await _dio.get(ApiConfig.osgamesStats);
+    return response.data as Map<String, dynamic>;
+  }
+
+  // Admin
+  Future<List<Game>> getOsgamesAdminPending({String? status}) async {
+    final params = status != null && status != 'all' ? {'status': status} : null;
+    final response = await _dio.get(ApiConfig.osgamesAdminPending, queryParameters: params);
+    return _unwrapList(response.data).map((j) => Game.fromJson(j)).toList();
+  }
+
+  Future<void> approveOsgamesGame(Object id, {String? note}) async {
+    await _dio.post(ApiConfig.resourceUrl(ApiConfig.osgamesAdminApprove, id), data: {'note': note});
+  }
+
+  Future<void> rejectOsgamesGame(Object id, {String? reason}) async {
+    await _dio.post(ApiConfig.resourceUrl(ApiConfig.osgamesAdminReject, id), data: {'reason': reason});
+  }
+
+  Future<void> takedownOsgamesGame(Object id, {String? reason}) async {
+    await _dio.post(ApiConfig.resourceUrl(ApiConfig.osgamesAdminTakedown, id), data: {'reason': reason});
+  }
+
+  Future<void> updateOsgamesGameBadges(Object id, List<String> badges) async {
+    await _dio.post(ApiConfig.resourceUrl(ApiConfig.osgamesAdminBadges, id), data: {'badges': badges});
+  }
+
+  // Game Issues
+  Future<List<GameIssue>> getOsgamesGameIssues(Object gameId) async {
+    final response = await _dio.get('${ApiConfig.osgamesIssues}?game=$gameId');
+    return _unwrapList(response.data).map((j) => GameIssue.fromJson(j)).toList();
+  }
+
+  Future<void> updateOsgamesIssueStatus(Object issueId, String status) async {
+    await _dio.patch(ApiConfig.resourceUrl(ApiConfig.osgamesIssues, issueId), data: {'status': status});
+  }
+
+  Future<void> deleteOsgamesIssue(Object issueId) async {
+    await _dio.delete(ApiConfig.resourceUrl(ApiConfig.osgamesIssues, issueId));
   }
 
   // ---- Gitea ----

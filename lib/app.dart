@@ -19,6 +19,9 @@ import 'pages/telemetry/telemetry_list_page.dart';
 import 'pages/config/config_list_page.dart';
 import 'pages/settings/profile_page.dart';
 import 'pages/settings/app_settings_page.dart';
+import 'pages/osgames/game_list_page.dart';
+import 'pages/osgames/game_manage_page.dart';
+import 'pages/osgames/category_list_page.dart';
 import 'providers/theme_provider.dart';
 
 /// Shell route: wraps all authenticated pages inside the sidebar layout.
@@ -72,6 +75,9 @@ class DevPlatformApp extends StatelessWidget {
             GoRoute(path: '/dashboard/announcements', name: 'announcements', builder: (_, _) => const AnnouncementListPage()),
             GoRoute(path: '/dashboard/telemetry', name: 'telemetry', builder: (_, _) => const TelemetryListPage()),
             GoRoute(path: '/dashboard/apps', name: 'apps', builder: (_, _) => const AppListPage()),
+            GoRoute(path: '/dashboard/osgames', name: 'osgames', builder: (_, _) => const GameListPage()),
+            GoRoute(path: '/dashboard/osgames/manage', name: 'osgames_manage', builder: (_, _) => const GameManagePage()),
+            GoRoute(path: '/dashboard/osgames/categories', name: 'osgames_categories', builder: (_, _) => const CategoryListPage()),
             GoRoute(path: '/dashboard/config', name: 'config', builder: (_, _) => const ConfigListPage()),
             GoRoute(path: '/dashboard/settings', name: 'settings', builder: (_, _) => const ProfilePage()),
             GoRoute(path: '/dashboard/app-settings', name: 'app_settings', builder: (_, _) => const AppSettingsPage()),

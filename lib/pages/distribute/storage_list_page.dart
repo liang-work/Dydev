@@ -187,6 +187,7 @@ class _StorageListPageState extends State<StorageListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.deleteStorage(id);
@@ -422,7 +423,7 @@ class _StorageListPageState extends State<StorageListPage> {
                     const SizedBox(height: 16), const Divider(), const Text('链接配置', style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _defaultLinkType,
+                      initialValue: _defaultLinkType,
                       decoration: const InputDecoration(labelText: '默认链接类型', border: OutlineInputBorder()),
                       items: const [
                         DropdownMenuItem(value: 'direct', child: Text('直接链接（带签名，有过期时间）')),

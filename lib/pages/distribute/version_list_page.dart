@@ -205,6 +205,7 @@ class _VersionListPageState extends State<VersionListPage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('确认'))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deprecateVersion(id);
       _loadData();
@@ -220,6 +221,7 @@ class _VersionListPageState extends State<VersionListPage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deleteVersion(id);
       _loadData();
@@ -879,7 +881,7 @@ class _VersionListPageState extends State<VersionListPage> {
                   Text('从存储选择文件', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedStorageId,
+                    initialValue: _selectedStorageId,
                     decoration: const InputDecoration(labelText: '选择存储', border: OutlineInputBorder()),
                     items: _storages.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                     onChanged: (v) {
@@ -972,7 +974,7 @@ class _VersionListPageState extends State<VersionListPage> {
                     )
                   else ...[
                     DropdownButtonFormField<String>(
-                      value: _selectedGithubRepo,
+                      initialValue: _selectedGithubRepo,
                       decoration: const InputDecoration(labelText: '选择仓库', border: OutlineInputBorder()),
                       items: _githubRepos.map((r) => DropdownMenuItem(value: r['full_name'] as String?, child: Text(r['name'] as String? ?? ''))).toList(),
                       onChanged: (v) {

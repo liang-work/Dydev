@@ -160,6 +160,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.publishAnnouncement(id);
@@ -184,6 +185,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.deleteAnnouncement(id);
@@ -448,7 +450,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                   Text(_editing != null ? '编辑公告' : '创建公告', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
-                    value: _formType,
+                    initialValue: _formType,
                     decoration: const InputDecoration(labelText: '公告类型', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'urgent', child: Text('紧急公告')),
@@ -464,7 +466,7 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
                   TextField(controller: _formContentCtrl, maxLines: 5, decoration: const InputDecoration(labelText: '内容', border: OutlineInputBorder())),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _formFilterType,
+                    initialValue: _formFilterType,
                     decoration: const InputDecoration(labelText: '目标用户筛选', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('所有用户')),

@@ -128,6 +128,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       ),
     );
     if (code != _software?.slug) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       await api.deleteSoftware(widget.softwareId);
@@ -152,6 +153,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       ),
     );
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       final api = context.read<AuthProvider>().apiService;
       switch (type) {
@@ -202,6 +204,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('删除', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.deleteChannel(id);
       _loadData();
@@ -211,17 +214,16 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
   }
 
   Future<void> _removeMember(SoftwareMember m) async {
-    final isSelf = false; // simplified
-    final confirmMsg = isSelf ? '确定要离开该团队吗？' : '确定要将成员 ${m.username} 从团队中移除吗？';
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('确认'), content: Text(confirmMsg),
+      title: const Text('确认'), content: Text('确定要将成员 ${m.username} 从团队中移除吗？'),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
         TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('确认'))],
     ));
     if (confirm != true) return;
+    if (!mounted) return;
     try {
       await context.read<AuthProvider>().apiService.removeMember(widget.softwareId, m.id);
-      if (isSelf) { if (mounted) context.go('/dashboard/softwares'); } else { _loadData(); }
+      _loadData();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('操作失败: $e')));
     }
@@ -614,7 +616,7 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
             TextField(controller: _memberUsernameCtrl, decoration: const InputDecoration(labelText: '用户名', border: OutlineInputBorder())),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _memberRole,
+              initialValue: _memberRole,
               decoration: const InputDecoration(labelText: '角色权限', border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: 'admin', child: Text('管理员 (Admin)')),

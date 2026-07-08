@@ -183,6 +183,7 @@ class _DashboardContentState extends State<_DashboardContent> {
     if (path.startsWith('/dashboard/telemetry')) return 'app_bar.telemetry'.tr();
     if (path.startsWith('/dashboard/config')) return 'app_bar.config'.tr();
     if (path.startsWith('/dashboard/apps')) return 'app_bar.apps'.tr();
+    if (path.startsWith('/dashboard/osgames')) return 'app_bar.osgames'.tr();
     if (path.startsWith('/dashboard/settings')) return 'app_bar.settings'.tr();
     if (path.startsWith('/dashboard/app-settings')) return 'app_bar.settings'.tr();
     return 'app_bar.dashboard'.tr();

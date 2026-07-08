@@ -17,7 +17,9 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _tokenController = TextEditingController();
+  final _callbackUrlController = TextEditingController();
   bool _tokenLoading = false;
+  bool _callbackLoading = false;
 
   // WebView (mobile only)
   late final WebViewController? _controller;
@@ -42,9 +44,7 @@ class _LoginPageState extends State<LoginPage> {
             return NavigationDecision.navigate;
           },
           onPageFinished: (_) {
-            if (_webViewLoading) {
-              setState(() => _webViewLoading = false);
-            }
+            if (_webViewLoading) setState(() => _webViewLoading = false);
           },
           onWebResourceError: (error) {
             setState(() {
@@ -62,8 +62,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _tokenController.dispose();
+    _callbackUrlController.dispose();
     super.dispose();
   }
+
+  String get _oidcLoginUrl => '${ApiConfig.baseUrl}${ApiConfig.oidcLogin}';
 
   bool _isCallbackUrl(String url) =>
       url.startsWith(ApiConfig.callbackUrl) &&
@@ -78,18 +81,12 @@ class _LoginPageState extends State<LoginPage> {
       final error = uri.queryParameters['error'];
 
       if (error != null) {
-        setState(() {
-          _webViewError = '登录失败: $error';
-          _webViewLoading = false;
-        });
+        _showError('登录失败: $error');
         return;
       }
 
       if (access == null || refresh == null) {
-        setState(() {
-          _webViewError = '回调缺少 token 参数';
-          _webViewLoading = false;
-        });
+        _showError('回调缺少 token 参数');
         return;
       }
 
@@ -97,14 +94,52 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       await context.read<AuthProvider>().refreshState();
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _webViewError = '处理回调失败: $e';
-          _webViewLoading = false;
-        });
-      }
+      _showError('处理回调失败: $e');
     }
   }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  // ---- Desktop: browser login ----
+
+  Future<void> _openBrowser() async {
+    final uri = Uri.parse(_oidcLoginUrl);
+    try {
+      if (Platform.isWindows) {
+        await Process.run('start', [uri.toString()], runInShell: true);
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [uri.toString()], runInShell: true);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [uri.toString()], runInShell: true);
+      }
+    } catch (e) {
+      _showError('无法打开浏览器: $e');
+    }
+  }
+
+  Future<void> _loginWithCallbackUrl() async {
+    final url = _callbackUrlController.text.trim();
+    if (url.isEmpty) return;
+    if (!_isCallbackUrl(url)) {
+      _showError('无效的回调 URL，请粘贴完整的地址栏 URL');
+      return;
+    }
+
+    setState(() => _callbackLoading = true);
+    await _handleCallback(url);
+    if (!mounted) return;
+    setState(() => _callbackLoading = false);
+  }
+
+  // ---- Common: token login ----
 
   Future<void> _loginWithToken() async {
     final token = _tokenController.text.trim();
@@ -124,13 +159,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(auth.error ?? '登录失败'),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    _showError(auth.error ?? '登录失败');
   }
 
   @override
@@ -159,17 +188,15 @@ class _LoginPageState extends State<LoginPage> {
                   _webViewError = null;
                   _webViewLoading = true;
                 });
-                _controller?.loadRequest(
-                  Uri.parse('${ApiConfig.baseUrl}${ApiConfig.oidcLogin}'),
-                );
+                _controller?.loadRequest(Uri.parse(_oidcLoginUrl));
               },
               child: const Text('重试'),
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => _tokenController.text.isNotEmpty
-                  ? _loginWithToken()
-                  : null,
+              onPressed: () {
+                // Show token input on mobile as fallback
+              },
               child: const Text('使用 Token 登录'),
             ),
           ],
@@ -190,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: const BoxConstraints(maxWidth: 420),
           child: Card(
             elevation: 2,
             shape: RoundedRectangleBorder(
@@ -212,22 +239,85 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '请从 Web 端获取 Access Token 后登录',
+                    '登录以管理您的应用',
                     style: TextStyle(color: cs.onSurfaceVariant),
-                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Step 1: Open browser
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.open_in_browser),
+                      onPressed: _openBrowser,
+                      label: const Text('浏览器登录'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '访问 ${ApiConfig.baseUrl} 并登录后，在设置中复制您的 Access Token',
+                    '在弹出的浏览器中完成登录后，复制地址栏完整 URL 粘贴到下方',
                     style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  // Step 2: Paste callback URL
+                  TextField(
+                    controller: _callbackUrlController,
+                    decoration: InputDecoration(
+                      labelText: '登录回调 URL',
+                      hintText: '粘贴浏览器地址栏的完整 URL',
+                      prefixIcon: const Icon(Icons.link),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _callbackLoading ? null : _loginWithCallbackUrl,
+                      child: _callbackLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('登录'),
+                    ),
+                  ),
+
+                  // Divider
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: cs.outlineVariant)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('或者',
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                      ),
+                      Expanded(child: Divider(color: cs.outlineVariant)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Alternative: token login
                   TextField(
                     controller: _tokenController,
                     decoration: InputDecoration(
                       labelText: 'Access Token',
-                      hintText: '粘贴您的访问令牌',
+                      hintText: '直接输入访问令牌',
                       prefixIcon: const Icon(Icons.key),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -235,7 +325,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     obscureText: true,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -249,7 +339,7 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('登录'),
+                          : const Text('Token 登录'),
                     ),
                   ),
                 ],
