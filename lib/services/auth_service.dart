@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 import 'logger_service.dart';
 
 /// Manages authentication tokens using secure device storage.
@@ -13,7 +15,9 @@ class AuthService {
   final FlutterSecureStorage _storage;
 
   AuthService({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ?? const FlutterSecureStorage(
+          aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        );
 
   /// Persist both access and refresh tokens.
   Future<void> saveTokens(
@@ -45,6 +49,33 @@ class AuthService {
     final exists = token != null && token.isNotEmpty;
     LoggerService.d(_tag, 'hasToken() -> $exists');
     return exists;
+  }
+
+  /// Alias for [hasToken].
+  Future<bool> isLoggedIn() => hasToken();
+
+  /// Refresh the access token using the stored refresh token.
+  /// Sends POST to /api/accounts/token/refresh/.
+  /// Returns the new access token on success; throws on failure.
+  Future<String> refresh() async {
+    final refresh = await _storage.read(key: _refreshTokenKey);
+    if (refresh == null) throw Exception('No refresh token');
+
+    final dio = Dio(BaseOptions(
+      baseUrl: ApiConfig.baseUrl,
+      headers: {'Content-Type': 'application/json'},
+      validateStatus: (_) => true,
+    ));
+    final resp = await dio.post(ApiConfig.tokenRefresh, data: {'refresh': refresh});
+
+    if (resp.statusCode != 200) {
+      throw Exception('Refresh failed: ${resp.statusCode} ${resp.data}');
+    }
+
+    final newAccess = resp.data['access'] as String;
+    await _storage.write(key: _accessTokenKey, value: newAccess);
+    LoggerService.i(_tag, 'Token refreshed successfully');
+    return newAccess;
   }
 
   /// Remove all stored tokens (used on logout).

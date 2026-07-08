@@ -107,6 +107,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Re-read tokens from storage and re-init auth state.
+  /// Used after WebView login saves tokens externally.
+  Future<void> refreshState() async {
+    final token = await _authService.getAccessToken();
+    if (token == null) {
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return;
+    }
+    try {
+      final user = await _apiService.validateToken(token);
+      await DatabaseService.saveUser(user);
+      _user = user;
+      _status = AuthStatus.authenticated;
+    } catch (e, s) {
+      LoggerService.e('AuthProvider', 'refreshState validation failed', e, s);
+      _status = AuthStatus.authenticated;
+    }
+    notifyListeners();
+  }
+
   // ---- Logout ----
 
   /// Clear tokens, cached data and set state to unauthenticated.
