@@ -52,10 +52,12 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: dydev-Windows
-          path: |
-            dydev-windows.zip
-            installer_output/*.exe
+          name: dydev-Windows-portable
+          path: dydev-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dydev-Windows-installer
+          path: installer_output/*.exe
 
   linux:
     if: contains(inputs.platforms, 'linux')
