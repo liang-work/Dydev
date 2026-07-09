@@ -377,55 +377,60 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('编辑存储', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _editNameCtrl,
-              decoration: const InputDecoration(labelText: '存储名称', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _editLinkType,
-              decoration: const InputDecoration(labelText: '默认链接类型', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: 'direct', child: Text('直接链接（带签名）')),
-                DropdownMenuItem(value: 'unsigned', child: Text('直接链接（无签名）')),
-                DropdownMenuItem(value: 'proxy', child: Text('平台代理')),
-                DropdownMenuItem(value: 'cdn', child: Text('CDN 加速')),
-              ],
-              onChanged: (v) => setState(() => _editLinkType = v ?? 'direct'),
-            ),
-            if (_editLinkType == 'cdn') ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _editCdnCtrl,
-                decoration: const InputDecoration(labelText: 'CDN 域名', border: OutlineInputBorder(), hintText: 'cdn.example.com'),
-              ),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(onPressed: () => setState(() => _showEditDialog = false), child: const Text('取消')),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _submitting ? null : _saveStorage,
-                  child: _submitting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('保存'),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('编辑存储', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _editNameCtrl,
+                      decoration: const InputDecoration(labelText: '存储名称', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: _editLinkType,
+                      decoration: const InputDecoration(labelText: '默认链接类型', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'direct', child: Text('直接链接（带签名）')),
+                        DropdownMenuItem(value: 'unsigned', child: Text('直接链接（无签名）')),
+                        DropdownMenuItem(value: 'proxy', child: Text('平台代理')),
+                        DropdownMenuItem(value: 'cdn', child: Text('CDN 加速')),
+                      ],
+                      onChanged: (v) => setState(() => _editLinkType = v ?? 'direct'),
+                    ),
+                    if (_editLinkType == 'cdn') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _editCdnCtrl,
+                        decoration: const InputDecoration(labelText: 'CDN 域名', border: OutlineInputBorder(), hintText: 'cdn.example.com'),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(onPressed: () => setState(() => _showEditDialog = false), child: const Text('取消')),
+                        const SizedBox(width: 12),
+                        FilledButton(
+                          onPressed: _submitting ? null : _saveStorage,
+                          child: _submitting
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('保存'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ],
+          ),
         ),
-      ),
-      ),
       ),
     );
   }
@@ -438,98 +443,103 @@ class _StorageDetailPageState extends State<StorageDetailPage> {
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('上传文件', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text('上传文件到当前目录: /$_currentPath', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.outlineVariant, style: BorderStyle.solid),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _selectedFilePath == null
-                  ? GestureDetector(
-                      onTap: () async {
-                        // In a real app we'd use file_picker
-                      },
-                      child: Column(
-                        children: [
-                          Icon(Icons.cloud_upload, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
-                          const SizedBox(height: 8),
-                          Text('请选择文件', style: TextStyle(color: cs.onSurfaceVariant)),
-                          TextButton(
-                            onPressed: () {
-                              // Simulate file selection
-                            },
-                            child: const Text('选择文件'),
-                          ),
-                        ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('上传文件', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text('上传文件到当前目录: /$_currentPath', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: cs.outlineVariant, style: BorderStyle.solid),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    )
-                  : Column(
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.insert_drive_file),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(_selectedFileName ?? '')),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () => setState(() { _selectedFilePath = null; _selectedFileName = null; }),
+                      child: _selectedFilePath == null
+                          ? GestureDetector(
+                              onTap: () async {
+                                // In a real app we'd use file_picker
+                              },
+                              child: Column(
+                                children: [
+                                  Icon(Icons.cloud_upload, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+                                  const SizedBox(height: 8),
+                                  Text('请选择文件', style: TextStyle(color: cs.onSurfaceVariant)),
+                                  TextButton(
+                                    onPressed: () {
+                                      // Simulate file selection
+                                    },
+                                    child: const Text('选择文件'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.insert_drive_file),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(_selectedFileName ?? '')),
+                                    IconButton(
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () => setState(() { _selectedFilePath = null; _selectedFileName = null; }),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _uploadNameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: '自定义文件名（可选）',
+                        border: OutlineInputBorder(),
+                        hintText: '留空使用原文件名',
+                      ),
+                    ),
+                    if (_uploading) ...[
+                      const SizedBox(height: 16),
+                      LinearProgressIndicator(value: _uploadProgress / 100),
+                      const SizedBox(height: 8),
+                      Text('上传中: ${_uploadProgress.toInt()}%', style: TextStyle(color: theme.colorScheme.primary)),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(onPressed: () => setState(() => _showUploadDialog = false), child: const Text('取消')),
+                        const SizedBox(width: 12),
+                        FilledButton(
+                          onPressed: _selectedFilePath == null || _uploading ? null : () {
+                            // Upload implementation would go here with file_picker
+                            setState(() => _uploading = true);
+                            // Simulate progress
+                            Future.delayed(const Duration(seconds: 2), () {
+                              setState(() { _uploading = false; _showUploadDialog = false; });
+                              _loadFiles();
+                            });
+                          },
+                          child: const Text('上传'),
                         ),
                       ],
                     ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _uploadNameCtrl,
-              decoration: const InputDecoration(
-                labelText: '自定义文件名（可选）',
-                border: OutlineInputBorder(),
-                hintText: '留空使用原文件名',
+                  ],
+                ),
               ),
             ),
-            if (_uploading) ...[
-              const SizedBox(height: 16),
-              LinearProgressIndicator(value: _uploadProgress / 100),
-              const SizedBox(height: 8),
-              Text('上传中: ${_uploadProgress.toInt()}%', style: TextStyle(color: theme.colorScheme.primary)),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(onPressed: () => setState(() => _showUploadDialog = false), child: const Text('取消')),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _selectedFilePath == null || _uploading ? null : () {
-                    // Upload implementation would go here with file_picker
-                    setState(() => _uploading = true);
-                    // Simulate progress
-                    Future.delayed(const Duration(seconds: 2), () {
-                      setState(() { _uploading = false; _showUploadDialog = false; });
-                      _loadFiles();
-                    });
-                  },
-                  child: const Text('上传'),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
-    ),
-    ),
     );
   }
 

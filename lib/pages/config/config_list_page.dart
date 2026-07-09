@@ -271,37 +271,39 @@ class _ConfigListPageState extends State<ConfigListPage> {
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
+            constraints: BoxConstraints(maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.85),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_editingItem != null ? '编辑配置' : '新增配置', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 4),
-                  Text('配置变更将通过 WebSocket 实时推送至在线客户端。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                  const SizedBox(height: 20),
-                  TextField(controller: _formKeyCtrl, decoration: const InputDecoration(labelText: '配置键 (Key)', border: OutlineInputBorder(), helperText: '例如: server_url, enable_feature_x'), enabled: _editingItem == null),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formValueCtrl, maxLines: 5, decoration: InputDecoration(labelText: '配置值 (Value - JSON格式)', border: const OutlineInputBorder(), errorText: _jsonError, helperText: '例如: "https://api.com" 或 {"enabled": true}'), onChanged: (v) {
-                    try { jsonDecode(v); setState(() => _jsonError = null); }
-                    on FormatException { setState(() => _jsonError = '无效的 JSON 格式'); }
-                  }),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formDescCtrl, decoration: const InputDecoration(labelText: '描述', border: OutlineInputBorder())),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Checkbox(value: _formIsActive, onChanged: (v) => setState(() => _formIsActive = v ?? true)),
-                    const Text('立即启用'),
-                  ]),
-                  const SizedBox(height: 20),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    OutlinedButton(onPressed: () => setState(() => _showDialog = false), child: const Text('取消')),
-                    const SizedBox(width: 12),
-                    FilledButton(onPressed: _jsonError != null ? null : _save, child: const Text('保存并推送')),
-                  ]),
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_editingItem != null ? '编辑配置' : '新增配置', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text('配置变更将通过 WebSocket 实时推送至在线客户端。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                    const SizedBox(height: 20),
+                    TextField(controller: _formKeyCtrl, decoration: const InputDecoration(labelText: '配置键 (Key)', border: OutlineInputBorder(), helperText: '例如: server_url, enable_feature_x'), enabled: _editingItem == null),
+                    const SizedBox(height: 16),
+                    TextField(controller: _formValueCtrl, maxLines: 5, decoration: InputDecoration(labelText: '配置值 (Value - JSON格式)', border: const OutlineInputBorder(), errorText: _jsonError, helperText: '例如: "https://api.com" 或 {"enabled": true}'), onChanged: (v) {
+                      try { jsonDecode(v); setState(() => _jsonError = null); }
+                      on FormatException { setState(() => _jsonError = '无效的 JSON 格式'); }
+                    }),
+                    const SizedBox(height: 16),
+                    TextField(controller: _formDescCtrl, decoration: const InputDecoration(labelText: '描述', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Checkbox(value: _formIsActive, onChanged: (v) => setState(() => _formIsActive = v ?? true)),
+                      const Text('立即启用'),
+                    ]),
+                    const SizedBox(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      OutlinedButton(onPressed: () => setState(() => _showDialog = false), child: const Text('取消')),
+                      const SizedBox(width: 12),
+                      FilledButton(onPressed: _jsonError != null ? null : _save, child: const Text('保存并推送')),
+                    ]),
+                  ],
+                ),
               ),
             ),
           ),

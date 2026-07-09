@@ -440,87 +440,89 @@ class _AnnouncementListPageState extends State<AnnouncementListPage> {
       child: Center(
         child: Dialog(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: MediaQuery.of(context).size.height * 0.85),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_editing != null ? '编辑公告' : '创建公告', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    initialValue: _formType,
-                    decoration: const InputDecoration(labelText: '公告类型', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'urgent', child: Text('紧急公告')),
-                      DropdownMenuItem(value: 'update', child: Text('更新公告')),
-                      DropdownMenuItem(value: 'operation', child: Text('运营公告')),
-                      DropdownMenuItem(value: 'custom', child: Text('自定义公告')),
-                    ],
-                    onChanged: (v) => setState(() => _formType = v ?? 'update'),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formTitleCtrl, decoration: const InputDecoration(labelText: '标题', border: OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  TextField(controller: _formContentCtrl, maxLines: 5, decoration: const InputDecoration(labelText: '内容', border: OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _formFilterType,
-                    decoration: const InputDecoration(labelText: '目标用户筛选', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'all', child: Text('所有用户')),
-                      DropdownMenuItem(value: 'version', child: Text('按版本筛选')),
-                      DropdownMenuItem(value: 'channel', child: Text('按渠道筛选')),
-                    ],
-                    onChanged: (v) => setState(() => _formFilterType = v ?? 'all'),
-                  ),
-                  if (_formFilterType == 'version') ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: TextField(controller: _versionInputCtrl, decoration: const InputDecoration(labelText: '目标版本', hintText: '输入版本号后点击添加', border: OutlineInputBorder()))),
-                        const SizedBox(width: 8),
-                        IconButton(onPressed: () {
-                          final v = _versionInputCtrl.text.trim();
-                          if (v.isNotEmpty && !_formFilterVersions.contains(v)) { setState(() => _formFilterVersions.add(v)); _versionInputCtrl.clear(); }
-                        }, icon: const Icon(Icons.add)),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_editing != null ? '编辑公告' : '创建公告', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      initialValue: _formType,
+                      decoration: const InputDecoration(labelText: '公告类型', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'urgent', child: Text('紧急公告')),
+                        DropdownMenuItem(value: 'update', child: Text('更新公告')),
+                        DropdownMenuItem(value: 'operation', child: Text('运营公告')),
+                        DropdownMenuItem(value: 'custom', child: Text('自定义公告')),
                       ],
+                      onChanged: (v) => setState(() => _formType = v ?? 'update'),
                     ),
-                    Wrap(spacing: 6, runSpacing: 4, children: _formFilterVersions.map((v) => Chip(
-                      label: Text(v, style: const TextStyle(fontSize: 12)),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () => setState(() => _formFilterVersions.remove(v)),
-                    )).toList()),
-                  ],
-                  if (_formFilterType == 'channel') ...[
-                    const SizedBox(height: 12),
-                    const Text('目标渠道', style: TextStyle(fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    if (_loadingChannels)
-                      const Text('加载渠道中...')
-                    else if (_channels.isEmpty)
-                      Text('该软件暂无渠道', style: TextStyle(color: cs.onSurfaceVariant))
-                    else
-                      Wrap(spacing: 6, children: _channels.map((c) => FilterChip(
-                        label: Text(c),
-                        selected: _formFilterChannels.contains(c),
-                        onSelected: (v) { setState(() { if (v) { _formFilterChannels.add(c); } else { _formFilterChannels.remove(c); } }); },
+                    const SizedBox(height: 16),
+                    TextField(controller: _formTitleCtrl, decoration: const InputDecoration(labelText: '标题', border: OutlineInputBorder())),
+                    const SizedBox(height: 16),
+                    TextField(controller: _formContentCtrl, maxLines: 5, decoration: const InputDecoration(labelText: '内容', border: OutlineInputBorder())),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: _formFilterType,
+                      decoration: const InputDecoration(labelText: '目标用户筛选', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'all', child: Text('所有用户')),
+                        DropdownMenuItem(value: 'version', child: Text('按版本筛选')),
+                        DropdownMenuItem(value: 'channel', child: Text('按渠道筛选')),
+                      ],
+                      onChanged: (v) => setState(() => _formFilterType = v ?? 'all'),
+                    ),
+                    if (_formFilterType == 'version') ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: TextField(controller: _versionInputCtrl, decoration: const InputDecoration(labelText: '目标版本', hintText: '输入版本号后点击添加', border: OutlineInputBorder()))),
+                          const SizedBox(width: 8),
+                          IconButton(onPressed: () {
+                            final v = _versionInputCtrl.text.trim();
+                            if (v.isNotEmpty && !_formFilterVersions.contains(v)) { setState(() => _formFilterVersions.add(v)); _versionInputCtrl.clear(); }
+                          }, icon: const Icon(Icons.add)),
+                        ],
+                      ),
+                      Wrap(spacing: 6, runSpacing: 4, children: _formFilterVersions.map((v) => Chip(
+                        label: Text(v, style: const TextStyle(fontSize: 12)),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () => setState(() => _formFilterVersions.remove(v)),
                       )).toList()),
+                    ],
+                    if (_formFilterType == 'channel') ...[
+                      const SizedBox(height: 12),
+                      const Text('目标渠道', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
+                      if (_loadingChannels)
+                        const Text('加载渠道中...')
+                      else if (_channels.isEmpty)
+                        Text('该软件暂无渠道', style: TextStyle(color: cs.onSurfaceVariant))
+                      else
+                        Wrap(spacing: 6, children: _channels.map((c) => FilterChip(
+                          label: Text(c),
+                          selected: _formFilterChannels.contains(c),
+                          onSelected: (v) { setState(() { if (v) { _formFilterChannels.add(c); } else { _formFilterChannels.remove(c); } }); },
+                        )).toList()),
+                    ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: '过期时间（可选）', border: OutlineInputBorder(), hintText: 'yyyy-MM-dd HH:mm'),
+                      controller: TextEditingController(text: _formExpiresAt),
+                      onChanged: (v) => _formExpiresAt = v,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      OutlinedButton(onPressed: () => setState(() => _showFormDialog = false), child: const Text('取消')),
+                      const SizedBox(width: 12),
+                      FilledButton(onPressed: _save, child: Text(_editing != null ? '保存' : '创建')),
+                    ]),
                   ],
-                  const SizedBox(height: 16),
-                  TextField(
-                    decoration: const InputDecoration(labelText: '过期时间（可选）', border: OutlineInputBorder(), hintText: 'yyyy-MM-dd HH:mm'),
-                    controller: TextEditingController(text: _formExpiresAt),
-                    onChanged: (v) => _formExpiresAt = v,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    OutlinedButton(onPressed: () => setState(() => _showFormDialog = false), child: const Text('取消')),
-                    const SizedBox(width: 12),
-                    FilledButton(onPressed: _save, child: Text(_editing != null ? '保存' : '创建')),
-                  ]),
-                ],
+                ),
               ),
             ),
           ),

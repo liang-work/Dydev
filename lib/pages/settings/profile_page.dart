@@ -606,42 +606,47 @@ class _ProfilePageState extends State<ProfilePage> {
             // Mirror dialog
             if (_showMirrorDialog)
               Dialog(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_editingMirror != null ? '编辑镜像' : '添加镜像', style: theme.textTheme.titleLarge),
-                      const SizedBox(height: 20),
-                      TextField(controller: _mirrorNameCtrl, decoration: const InputDecoration(labelText: '镜像名称', border: OutlineInputBorder(), hintText: '如: ghproxy')),
-                      const SizedBox(height: 12),
-                      TextField(controller: _mirrorUrlCtrl, decoration: const InputDecoration(labelText: '基础 URL', border: OutlineInputBorder(), hintText: 'https://mirror.ghproxy.com')),
-                      const SizedBox(height: 12),
-                      TextField(controller: _mirrorPriorityCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '优先级', border: OutlineInputBorder(), helperText: '数字越小越优先')),
-                      const SizedBox(height: 12),
-                      CheckboxListTile(
-                        value: _mirrorActive,
-                        onChanged: (v) => setState(() => _mirrorActive = v ?? true),
-                        title: const Text('启用'),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          OutlinedButton(onPressed: () => setState(() => _showMirrorDialog = false), child: const Text('取消')),
-                          const SizedBox(width: 12),
-                          FilledButton(
-                            onPressed: _savingMirror ? null : _saveMirror,
-                            child: _savingMirror
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('保存'),
+                          Text(_editingMirror != null ? '编辑镜像' : '添加镜像', style: theme.textTheme.titleLarge),
+                          const SizedBox(height: 20),
+                          TextField(controller: _mirrorNameCtrl, decoration: const InputDecoration(labelText: '镜像名称', border: OutlineInputBorder(), hintText: '如: ghproxy')),
+                          const SizedBox(height: 12),
+                          TextField(controller: _mirrorUrlCtrl, decoration: const InputDecoration(labelText: '基础 URL', border: OutlineInputBorder(), hintText: 'https://mirror.ghproxy.com')),
+                          const SizedBox(height: 12),
+                          TextField(controller: _mirrorPriorityCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: '优先级', border: OutlineInputBorder(), helperText: '数字越小越优先')),
+                          const SizedBox(height: 12),
+                          CheckboxListTile(
+                            value: _mirrorActive,
+                            onChanged: (v) => setState(() => _mirrorActive = v ?? true),
+                            title: const Text('启用'),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              OutlinedButton(onPressed: () => setState(() => _showMirrorDialog = false), child: const Text('取消')),
+                              const SizedBox(width: 12),
+                              FilledButton(
+                                onPressed: _savingMirror ? null : _saveMirror,
+                                child: _savingMirror
+                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                    : const Text('保存'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

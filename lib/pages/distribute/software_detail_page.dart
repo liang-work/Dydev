@@ -510,40 +510,45 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('编辑软件', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 20),
-                TextField(controller: _editNameCtrl, decoration: const InputDecoration(labelText: '软件名称', border: OutlineInputBorder())),
-                const SizedBox(height: 12),
-                TextField(controller: _editSlugCtrl, decoration: const InputDecoration(labelText: 'URL标识', border: OutlineInputBorder())),
-                const SizedBox(height: 12),
-                TextField(controller: _editDescCtrl, maxLines: 3, decoration: const InputDecoration(labelText: '描述', border: OutlineInputBorder())),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  children: ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'Web'].map((p) => FilterChip(
-                    label: Text(p, style: const TextStyle(fontSize: 13)),
-                    selected: _editPlatforms.contains(p),
-                    onSelected: (_) => _togglePlatform(p),
-                  )).toList(),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    OutlinedButton(onPressed: () => setState(() => _showEditDialog = false), child: const Text('取消')),
-                    const SizedBox(width: 12),
-                    FilledButton(onPressed: _submitting ? null : _saveSoftware, child: _submitting
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('保存')),
+                    Text('编辑软件', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 20),
+                    TextField(controller: _editNameCtrl, decoration: const InputDecoration(labelText: '软件名称', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _editSlugCtrl, decoration: const InputDecoration(labelText: 'URL标识', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    TextField(controller: _editDescCtrl, maxLines: 3, decoration: const InputDecoration(labelText: '描述', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      children: ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'Web'].map((p) => FilterChip(
+                        label: Text(p, style: const TextStyle(fontSize: 13)),
+                        selected: _editPlatforms.contains(p),
+                        onSelected: (_) => _togglePlatform(p),
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(onPressed: () => setState(() => _showEditDialog = false), child: const Text('取消')),
+                        const SizedBox(width: 12),
+                        FilledButton(onPressed: _submitting ? null : _saveSoftware, child: _submitting
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('保存')),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -559,36 +564,41 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_editingChannel != null ? '编辑渠道' : '添加渠道', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 20),
-                TextField(controller: _channelNameCtrl, decoration: const InputDecoration(labelText: '渠道名称', border: OutlineInputBorder(), hintText: '例如：稳定版')),
-                const SizedBox(height: 12),
-                TextField(controller: _channelTypeCtrl, decoration: const InputDecoration(labelText: '渠道类型', border: OutlineInputBorder(), hintText: '如 stable, beta')),
-                const SizedBox(height: 12),
-                CheckboxListTile(
-                  value: _channelActive,
-                  onChanged: (v) => setState(() => _channelActive = v ?? true),
-                  title: const Text('启用此渠道'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    OutlinedButton(onPressed: () => setState(() { _showChannelDialog = false; _editingChannel = null; }), child: const Text('取消')),
-                    const SizedBox(width: 12),
-                    FilledButton(onPressed: _channelSubmitting ? null : _saveChannel, child: _channelSubmitting
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('保存')),
+                    Text(_editingChannel != null ? '编辑渠道' : '添加渠道', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 20),
+                    TextField(controller: _channelNameCtrl, decoration: const InputDecoration(labelText: '渠道名称', border: OutlineInputBorder(), hintText: '例如：稳定版')),
+                    const SizedBox(height: 12),
+                    TextField(controller: _channelTypeCtrl, decoration: const InputDecoration(labelText: '渠道类型', border: OutlineInputBorder(), hintText: '如 stable, beta')),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: _channelActive,
+                      onChanged: (v) => setState(() => _channelActive = v ?? true),
+                      title: const Text('启用此渠道'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(onPressed: () => setState(() { _showChannelDialog = false; _editingChannel = null; }), child: const Text('取消')),
+                        const SizedBox(width: 12),
+                        FilledButton(onPressed: _channelSubmitting ? null : _saveChannel, child: _channelSubmitting
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('保存')),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -604,54 +614,59 @@ class _SoftwareDetailPageState extends State<SoftwareDetailPage> {
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('添加团队成员', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            const Text('输入用户名并分配权限角色。'),
-            const SizedBox(height: 16),
-            TextField(controller: _memberUsernameCtrl, decoration: const InputDecoration(labelText: '用户名', border: OutlineInputBorder())),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _memberRole,
-              decoration: const InputDecoration(labelText: '角色权限', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: 'admin', child: Text('管理员 (Admin)')),
-                DropdownMenuItem(value: 'developer', child: Text('开发者 (Developer)')),
-                DropdownMenuItem(value: 'viewer', child: Text('观察者 (Viewer)')),
-                DropdownMenuItem(value: 'custom', child: Text('自定义 (Custom)')),
-              ],
-              onChanged: (v) => setState(() => _memberRole = v ?? 'viewer'),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('添加团队成员', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    const Text('输入用户名并分配权限角色。'),
+                    const SizedBox(height: 16),
+                    TextField(controller: _memberUsernameCtrl, decoration: const InputDecoration(labelText: '用户名', border: OutlineInputBorder())),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _memberRole,
+                      decoration: const InputDecoration(labelText: '角色权限', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'admin', child: Text('管理员 (Admin)')),
+                        DropdownMenuItem(value: 'developer', child: Text('开发者 (Developer)')),
+                        DropdownMenuItem(value: 'viewer', child: Text('观察者 (Viewer)')),
+                        DropdownMenuItem(value: 'custom', child: Text('自定义 (Custom)')),
+                      ],
+                      onChanged: (v) => setState(() => _memberRole = v ?? 'viewer'),
+                    ),
+                    if (_memberRole == 'custom') ...[
+                      const SizedBox(height: 12),
+                      ...['distribute', 'telemetry', 'dyconfig'].map((perm) => CheckboxListTile(
+                        value: _memberPermissions[perm] ?? false,
+                        onChanged: (v) => setState(() => _memberPermissions[perm] = v ?? false),
+                        title: Text(perm == 'distribute' ? '分发管理' : perm == 'telemetry' ? '遥测监控' : '云端配置', style: const TextStyle(fontSize: 13)),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      )),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(onPressed: () => setState(() => _showMemberDialog = false), child: const Text('取消')),
+                        const SizedBox(width: 12),
+                        FilledButton(onPressed: _memberSubmitting ? null : _addMember, child: _memberSubmitting
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('确认添加')),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            if (_memberRole == 'custom') ...[
-              const SizedBox(height: 12),
-              ...['distribute', 'telemetry', 'dyconfig'].map((perm) => CheckboxListTile(
-                value: _memberPermissions[perm] ?? false,
-                onChanged: (v) => setState(() => _memberPermissions[perm] = v ?? false),
-                title: Text(perm == 'distribute' ? '分发管理' : perm == 'telemetry' ? '遥测监控' : '云端配置', style: const TextStyle(fontSize: 13)),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              )),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(onPressed: () => setState(() => _showMemberDialog = false), child: const Text('取消')),
-                const SizedBox(width: 12),
-                FilledButton(onPressed: _memberSubmitting ? null : _addMember, child: _memberSubmitting
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('确认添加')),
-              ],
-            ),
-          ],
+          ),
         ),
-      ),
-      ),
       ),
     );
   }

@@ -56,7 +56,6 @@ jobs:
           path: |
             dydev-windows.zip
             installer_output/*.exe
-          if-no-files-found: warn
 
   linux:
     if: contains(inputs.platforms, 'linux')
@@ -196,7 +195,11 @@ jobs:
           fi
       - name: Build IPA (unsigned)
         if: env.HAS_SIGNING == '0'
-        run: flutter build ipa --release --no-codesign --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
+        run: |
+          flutter build ios --release --no-codesign --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
+          mkdir -p build/ios/ipa/Payload
+          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa && zip -r Runner.ipa Payload/ && cd -
       - name: Build IPA (signed)
         if: env.HAS_SIGNING == '1'
         env:

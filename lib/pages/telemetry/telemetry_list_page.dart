@@ -523,51 +523,56 @@ class _TelemetryListPageState extends State<TelemetryListPage>
       color: cs.scrim.withValues(alpha: 0.26),
       child: Center(
         child: Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('配置自定义统计指标'),
-                const SizedBox(height: 4),
-                Text('定义如何从上报的 JSON 数据中提取并计算统计值。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
-                const SizedBox(height: 16),
-                TextField(controller: _defLabelCtrl, decoration: const InputDecoration(labelText: '指标名称', border: OutlineInputBorder(), hintText: '如: 平均FPS')),
-                const SizedBox(height: 12),
-                TextField(controller: _defFieldCtrl, decoration: const InputDecoration(labelText: 'JSON 字段路径', border: OutlineInputBorder(), hintText: 'content.fps')),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _defDataType,
-                  decoration: const InputDecoration(labelText: '数据来源类型', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'metric', child: Text('Metric')),
-                    DropdownMenuItem(value: 'log', child: Text('Log')),
-                    DropdownMenuItem(value: 'trace', child: Text('Trace')),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('配置自定义统计指标'),
+                    const SizedBox(height: 4),
+                    Text('定义如何从上报的 JSON 数据中提取并计算统计值。', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                    const SizedBox(height: 16),
+                    TextField(controller: _defLabelCtrl, decoration: const InputDecoration(labelText: '指标名称', border: OutlineInputBorder(), hintText: '如: 平均FPS')),
+                    const SizedBox(height: 12),
+                    TextField(controller: _defFieldCtrl, decoration: const InputDecoration(labelText: 'JSON 字段路径', border: OutlineInputBorder(), hintText: 'content.fps')),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _defDataType,
+                      decoration: const InputDecoration(labelText: '数据来源类型', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'metric', child: Text('Metric')),
+                        DropdownMenuItem(value: 'log', child: Text('Log')),
+                        DropdownMenuItem(value: 'trace', child: Text('Trace')),
+                      ],
+                      onChanged: (v) => setState(() => _defDataType = v ?? 'metric'),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _defAggregation,
+                      decoration: const InputDecoration(labelText: '聚合方式', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'avg', child: Text('平均值 (Avg)')),
+                        DropdownMenuItem(value: 'sum', child: Text('总和 (Sum)')),
+                        DropdownMenuItem(value: 'max', child: Text('最大值 (Max)')),
+                        DropdownMenuItem(value: 'min', child: Text('最小值 (Min)')),
+                        DropdownMenuItem(value: 'count', child: Text('计数 (Count)')),
+                        DropdownMenuItem(value: 'dist', child: Text('分布 (Dist)')),
+                      ],
+                      onChanged: (v) => setState(() => _defAggregation = v ?? 'avg'),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      OutlinedButton(onPressed: () => setState(() => _showDefDialog = false), child: const Text('取消')),
+                      const SizedBox(width: 12),
+                      FilledButton(onPressed: _saveDef, child: const Text('保存配置')),
+                    ]),
                   ],
-                  onChanged: (v) => setState(() => _defDataType = v ?? 'metric'),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _defAggregation,
-                  decoration: const InputDecoration(labelText: '聚合方式', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'avg', child: Text('平均值 (Avg)')),
-                    DropdownMenuItem(value: 'sum', child: Text('总和 (Sum)')),
-                    DropdownMenuItem(value: 'max', child: Text('最大值 (Max)')),
-                    DropdownMenuItem(value: 'min', child: Text('最小值 (Min)')),
-                    DropdownMenuItem(value: 'count', child: Text('计数 (Count)')),
-                    DropdownMenuItem(value: 'dist', child: Text('分布 (Dist)')),
-                  ],
-                  onChanged: (v) => setState(() => _defAggregation = v ?? 'avg'),
-                ),
-                const SizedBox(height: 20),
-                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  OutlinedButton(onPressed: () => setState(() => _showDefDialog = false), child: const Text('取消')),
-                  const SizedBox(width: 12),
-                  FilledButton(onPressed: _saveDef, child: const Text('保存配置')),
-                ]),
-              ],
+              ),
             ),
           ),
         ),
