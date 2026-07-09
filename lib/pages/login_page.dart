@@ -21,61 +21,20 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _tokenController = TextEditingController();
-  final _refreshTokenController = TextEditingController();
   WebViewController? _controller;
   bool _webViewLoading = true;
   String? _webViewError;
   bool _tokenLoading = false;
   bool _useTokenLogin = false;
+  bool _tokenSectionExpanded = false;
   bool _desktopOAuthLoading = false;
   String? _desktopOAuthError;
 
   bool get _isMobile => Platform.isAndroid || Platform.isIOS;
 
   @override
-  void initState() {
-    super.initState();
-    if (_isMobile) {
-      _initWebView();
-    }
-  }
-
-  void _initWebView() {
-    try {
-      final controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(NavigationDelegate(
-          onNavigationRequest: (request) {
-            final url = request.url;
-            if (_isCallbackUrl(url)) {
-              _handleCallback(url);
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onPageFinished: (_) {
-            if (_webViewLoading) setState(() => _webViewLoading = false);
-          },
-          onWebResourceError: (error) {
-            setState(() {
-              _webViewError = error.description;
-              _webViewLoading = false;
-            });
-          },
-        ))
-        ..loadRequest(Uri.parse(_oidcLoginUrl));
-      _controller = controller;
-    } catch (_) {
-      _controller = null;
-      _webViewLoading = false;
-      _useTokenLogin = true;
-    }
-  }
-
-  @override
   void dispose() {
     _tokenController.dispose();
-    _refreshTokenController.dispose();
     super.dispose();
   }
 
@@ -121,16 +80,31 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Future<void> _showTokenError(String msg) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('登录失败'),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loginWithToken() async {
     final token = _tokenController.text.trim();
     if (token.isEmpty) return;
 
     setState(() => _tokenLoading = true);
 
-    final refresh = _refreshTokenController.text.trim();
     final auth = context.read<AuthProvider>();
-    final success = await auth.loginWithToken(token,
-        refreshToken: refresh.isNotEmpty ? refresh : null);
+    final success = await auth.loginWithToken(token);
 
     if (!mounted) return;
     setState(() => _tokenLoading = false);
@@ -141,7 +115,39 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    _showError(auth.error ?? '登录失败');
+    await _showTokenError(auth.error ?? 'Token 无效或已过期');
+  }
+
+  void _initWebView() {
+    try {
+      final controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(NavigationDelegate(
+          onNavigationRequest: (request) {
+            final url = request.url;
+            if (_isCallbackUrl(url)) {
+              _handleCallback(url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) {
+            if (_webViewLoading) setState(() => _webViewLoading = false);
+          },
+          onWebResourceError: (error) {
+            setState(() {
+              _webViewError = error.description;
+              _webViewLoading = false;
+            });
+          },
+        ))
+        ..loadRequest(Uri.parse(_oidcLoginUrl));
+      _controller = controller;
+    } catch (_) {
+      _controller = null;
+      _webViewLoading = false;
+      _useTokenLogin = true;
+    }
   }
 
   // ---- Desktop OAuth device login ----
@@ -153,7 +159,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // 1. Start local HTTP server on random port
       final server = await shelf_io.serve(
         (Request request) async {
           if (request.requestedUri.path == '/callback') {
@@ -188,7 +193,6 @@ class _LoginPageState extends State<LoginPage> {
       final port = server.port;
       final redirectUri = 'http://localhost:$port/callback';
 
-      // 2. Get login URL from backend
       final dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
       final resp = await dio.get(
         ApiConfig.oauthDeviceLogin,
@@ -200,7 +204,6 @@ class _LoginPageState extends State<LoginPage> {
 
       final loginUrl = resp.data['login_url'] as String;
 
-      // 3. Open system browser
       final uri = Uri.parse(loginUrl);
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw Exception('无法打开浏览器');
@@ -208,7 +211,6 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      // Show info to user while waiting
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('请在打开的浏览器中完成登录...'),
@@ -230,27 +232,18 @@ class _LoginPageState extends State<LoginPage> {
     final cs = Theme.of(context).colorScheme;
 
     if (_isMobile) {
-      return _buildMobileBody(cs);
+      if (_useTokenLogin) {
+        return _buildScaffold(cs, _buildTokenLogin(cs));
+      }
+      if (_controller != null && _webViewError == null) {
+        return _buildScaffold(cs, _buildWebView());
+      }
+      if (_webViewError != null) {
+        return _buildScaffold(cs, _buildErrorView(cs));
+      }
+      return _buildScaffold(cs, _buildMobileLanding(cs));
     }
     return _buildDesktopBody(cs);
-  }
-
-  // ---- Mobile: WebView ----
-
-  Widget _buildMobileBody(ColorScheme cs) {
-    if (_useTokenLogin) {
-      return _buildScaffold(cs, _buildTokenLogin(cs));
-    }
-
-    if (_controller == null) {
-      return _buildScaffold(cs, _buildTokenLogin(cs));
-    }
-
-    if (_webViewError != null) {
-      return _buildScaffold(cs, _buildErrorView(cs));
-    }
-
-    return _buildScaffold(cs, _buildWebView());
   }
 
   Widget _buildScaffold(ColorScheme cs, Widget child) {
@@ -290,10 +283,121 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: () => setState(() => _useTokenLogin = true),
+            onPressed: () {
+              setState(() {
+                _useTokenLogin = true;
+                _controller = null;
+                _webViewError = null;
+              });
+            },
             child: const Text('使用 Token 登录'),
           ),
         ],
+      ),
+    );
+  }
+
+  // ---- Mobile landing page ----
+
+  Widget _buildMobileLanding(ColorScheme cs) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.code, size: 64, color: cs.primary),
+            const SizedBox(height: 16),
+            Text(
+              '开发者平台',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '登录以管理您的应用',
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.open_in_browser),
+                onPressed: () {
+                  setState(() {
+                    _webViewLoading = true;
+                    _webViewError = null;
+                  });
+                  _initWebView();
+                },
+                label: const Text('浏览器登录'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '在应用内打开浏览器完成登录',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 24),
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _tokenSectionExpanded = !_tokenSectionExpanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _tokenSectionExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: cs.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Token 登录',
+                      style: TextStyle(color: cs.primary, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_tokenSectionExpanded) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _tokenController,
+                decoration: InputDecoration(
+                  labelText: 'Access Token',
+                  hintText: '输入访问令牌',
+                  prefixIcon: const Icon(Icons.key),
+                  border: const OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _tokenLoading ? null : _loginWithToken,
+                  child: _tokenLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('登录'),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -310,8 +414,7 @@ class _LoginPageState extends State<LoginPage> {
             constraints: const BoxConstraints(maxWidth: 420),
             child: Card(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -353,9 +456,7 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 12),
                       Text(
                         _desktopOAuthError!,
-                        style: TextStyle(
-                            color: cs.error,
-                            fontSize: 12),
+                        style: TextStyle(color: cs.error, fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -365,7 +466,6 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     ),
-                    // Divider
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -379,29 +479,13 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Token login fallback
                     TextField(
                       controller: _tokenController,
                       decoration: InputDecoration(
                         labelText: 'Access Token',
                         hintText: '直接输入访问令牌',
                         prefixIcon: const Icon(Icons.key),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _refreshTokenController,
-                      decoration: InputDecoration(
-                        labelText: 'Refresh Token（可选）',
-                        hintText: '输入刷新令牌（可选，用于自动续期）',
-                        prefixIcon: const Icon(Icons.refresh),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        border: const OutlineInputBorder(),
                       ),
                       obscureText: true,
                     ),
@@ -411,12 +495,12 @@ class _LoginPageState extends State<LoginPage> {
                       child: FilledButton(
                         onPressed: _tokenLoading ? null : _loginWithToken,
                         child: _tokenLoading
-                            ? SizedBox(
+                            ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: cs.onPrimary,
+                                  color: Colors.white,
                                 ),
                               )
                             : const Text('Token 登录'),
@@ -432,7 +516,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ---- Common: Token login UI ----
+  // ---- Token login UI (mobile fallback) ----
 
   Widget _buildTokenLogin(ColorScheme cs) {
     return Center(
@@ -467,22 +551,7 @@ class _LoginPageState extends State<LoginPage> {
                       labelText: 'Access Token',
                       hintText: '输入访问令牌',
                       prefixIcon: const Icon(Icons.key),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _refreshTokenController,
-                    decoration: InputDecoration(
-                      labelText: 'Refresh Token（可选）',
-                      hintText: '输入刷新令牌（可选，用于自动续期）',
-                      prefixIcon: const Icon(Icons.refresh),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      border: const OutlineInputBorder(),
                     ),
                     obscureText: true,
                   ),
@@ -492,12 +561,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: FilledButton(
                       onPressed: _tokenLoading ? null : _loginWithToken,
                       child: _tokenLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: cs.onPrimary,
+                                color: Colors.white,
                               ),
                             )
                           : const Text('登录'),
@@ -508,10 +577,9 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () => setState(() {
                       _useTokenLogin = false;
                       _webViewError = null;
-                      _webViewLoading = true;
-                      _initWebView();
+                      _controller = null;
                     }),
-                    child: const Text('返回 Web 登录'),
+                    child: const Text('返回浏览器登录'),
                   ),
                 ],
               ),
