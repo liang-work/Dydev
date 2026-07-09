@@ -12,6 +12,7 @@ class ApiConfig {
   static const String oidcCallback = '/api/accounts/oidc/callback/';
   static const String oidcLogout = '/api/accounts/oidc/logout/';
   static const String tokenRefresh = '/api/accounts/token/refresh/';
+  static const String oauthDeviceLogin = '/api/accounts/oauth/device-login/';
   static const String userMe = '/api/accounts/user/me/';
   static const String userProfile = '/api/accounts/user/profile/';
   static const String notifications = '/api/accounts/notifications/';

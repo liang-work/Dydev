@@ -81,13 +81,13 @@ class AuthProvider extends ChangeNotifier {
 
   // ---- Login via access token ----
 
-  /// Login by directly providing an access token.
+  /// Login by directly providing an access token (and optionally a refresh token).
   /// Validates the token against the server and persists it on success.
-  Future<bool> loginWithToken(String token) async {
+  Future<bool> loginWithToken(String token, {String? refreshToken}) async {
     _error = null;
     try {
       final user = await _apiService.validateToken(token);
-      await _authService.saveTokens(accessToken: token);
+      await _authService.saveTokens(accessToken: token, refreshToken: refreshToken);
       await DatabaseService.saveUser(user);
       _user = user;
       _status = AuthStatus.authenticated;
