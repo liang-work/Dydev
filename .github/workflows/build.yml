@@ -198,7 +198,7 @@ jobs:
         run: |
           flutter build ios --release --no-codesign --build-name=$BUILD_VERSION --build-number=$BUILD_NUMBER
           mkdir -p build/ios/ipa/Payload
-          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa/Payload/
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
           cd build/ios/ipa && zip -r Runner.ipa Payload/ && cd -
       - name: Build IPA (signed)
         if: env.HAS_SIGNING == '1'
