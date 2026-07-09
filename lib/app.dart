@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'utils/global_keys.dart';
+import 'theme/app_theme.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard/dashboard_layout.dart';
 import 'pages/dashboard/dashboard_page.dart';
@@ -36,10 +37,7 @@ class _DashboardShell extends StatelessWidget {
 /// The root application widget.
 ///
 /// Sets up go_router with an auth redirect guard and a Material Design 3
-/// theme that mirrors the reference frontend's shadcn/ui colour palette.
-///
-/// The router is rebuilt when [AuthProvider] notifies listeners, which
-/// ensures the redirect guard re-evaluates after login / logout.
+/// theme generated from the indigo seed colour.
 class DevPlatformApp extends StatelessWidget {
   const DevPlatformApp({super.key});
 
@@ -94,64 +92,8 @@ class DevPlatformApp extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       themeMode: themeProv.mode,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6366F1),
-        scaffoldBackgroundColor: Colors.grey.shade50,
-        appBarTheme: AppBarTheme(
-          elevation: 0,
-          scrolledUnderElevation: 1,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.grey.shade800,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
-          ),
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6366F1),
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          scrolledUnderElevation: 1,
-          backgroundColor: Color(0xFF1E1E1E),
-          foregroundColor: Color(0xFFE0E0E0),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          color: const Color(0xFF1E1E1E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade800),
-          ),
-        ),
-        dividerTheme: DividerThemeData(color: Colors.grey.shade800),
-        dividerColor: Colors.grey.shade800,
-        dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF1E1E1E)),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade700)),
-          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade700)),
-          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: const Color(0xFF6366F1))),
-          filled: true,
-          fillColor: const Color(0xFF2A2A2A),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFFBDBDBD)),
-        primaryIconTheme: const IconThemeData(color: Color(0xFFBDBDBD)),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Color(0xFFE0E0E0)),
-          bodyMedium: TextStyle(color: Color(0xFFE0E0E0)),
-          bodySmall: TextStyle(color: Color(0xFFBDBDBD)),
-          titleLarge: TextStyle(color: Color(0xFFFFFFFF)),
-          titleMedium: TextStyle(color: Color(0xFFFFFFFF)),
-          titleSmall: TextStyle(color: Color(0xFFFFFFFF)),
-        ),
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
     );
   }
 }

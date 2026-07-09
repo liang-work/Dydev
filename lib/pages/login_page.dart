@@ -309,10 +309,6 @@ class _LoginPageState extends State<LoginPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
@@ -338,11 +334,11 @@ class _LoginPageState extends State<LoginPage> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: _desktopOAuthLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                    strokeWidth: 2, color: cs.onPrimary),
                               )
                             : const Icon(Icons.open_in_browser),
                         onPressed:
@@ -350,9 +346,6 @@ class _LoginPageState extends State<LoginPage> {
                         label: Text(_desktopOAuthLoading ? '启动中...' : '浏览器登录'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
                         ),
                       ),
                     ),
@@ -418,12 +411,12 @@ class _LoginPageState extends State<LoginPage> {
                       child: FilledButton(
                         onPressed: _tokenLoading ? null : _loginWithToken,
                         child: _tokenLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: cs.onPrimary,
                                 ),
                               )
                             : const Text('Token 登录'),
@@ -448,10 +441,6 @@ class _LoginPageState extends State<LoginPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
               child: Column(
@@ -503,12 +492,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: FilledButton(
                       onPressed: _tokenLoading ? null : _loginWithToken,
                       child: _tokenLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: cs.onPrimary,
                               ),
                             )
                           : const Text('登录'),

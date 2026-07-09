@@ -34,11 +34,6 @@ class MyAppsSection extends StatelessWidget {
           )
         else
           Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-            ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

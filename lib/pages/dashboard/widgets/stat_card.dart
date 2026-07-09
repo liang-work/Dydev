@@ -19,11 +19,6 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: cs.outlineVariant),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(

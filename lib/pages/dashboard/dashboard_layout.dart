@@ -50,7 +50,7 @@ class _DashboardContentState extends State<_DashboardContent> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Widget _buildSidebar(BuildContext context) {
-    return Sidebar(
+    final sidebar = Sidebar(
       currentRoute: widget.routePath,
       onNavigate: (route) {
         if (widget.isMobile) _scaffoldKey.currentState?.closeDrawer();
@@ -61,6 +61,8 @@ class _DashboardContentState extends State<_DashboardContent> {
         if (context.mounted) context.go('/login');
       },
     );
+    if (widget.isMobile) return sidebar;
+    return SizedBox(width: 240, child: sidebar);
   }
 
   @override

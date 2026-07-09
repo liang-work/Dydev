@@ -336,28 +336,53 @@ class _BadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final config = _badgeConfig[badge];
+    final Color color;
+    if (config != null) {
+      switch (config.role) {
+        case _Role.primary:
+          color = cs.primary;
+        case _Role.secondary:
+          color = cs.secondary;
+        case _Role.tertiary:
+          color = cs.tertiary;
+        case _Role.error:
+          color = cs.error;
+      }
+    } else {
+      color = cs.outlineVariant;
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: (config?.color ?? Colors.grey).withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(config?.label ?? badge, style: TextStyle(fontSize: 10, color: config?.color ?? Colors.grey, fontWeight: FontWeight.w500)),
+      child: Text(
+        config?.label ?? badge,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }
 
+enum _Role { primary, secondary, tertiary, error }
+
 const _badgeConfig = {
-  'official': _BadgeConfig(label: '官方', color: Color(0xFF3B82F6)),
-  'verified': _BadgeConfig(label: '认证', color: Color(0xFF22C55E)),
-  'featured': _BadgeConfig(label: '精选', color: Color(0xFFA855F7)),
-  'trending': _BadgeConfig(label: '热门', color: Color(0xFFF97316)),
-  'new': _BadgeConfig(label: '新品', color: Color(0xFF06B6D4)),
+  'official': _BadgeConfig(label: '官方', role: _Role.primary),
+  'verified': _BadgeConfig(label: '认证', role: _Role.tertiary),
+  'featured': _BadgeConfig(label: '精选', role: _Role.secondary),
+  'trending': _BadgeConfig(label: '热门', role: _Role.error),
+  'new': _BadgeConfig(label: '新品', role: _Role.tertiary),
 };
 
 class _BadgeConfig {
   final String label;
-  final Color color;
-  const _BadgeConfig({required this.label, required this.color});
+  final _Role role;
+  const _BadgeConfig({required this.label, required this.role});
 }
