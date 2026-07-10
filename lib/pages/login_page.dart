@@ -152,6 +152,53 @@ class _LoginPageState extends State<LoginPage> {
 
   // ---- Desktop OAuth device login ----
 
+  String _oauthPageHtml({required String title, required String body, bool autoClose = false}) {
+    return '''
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$title</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1f2937;
+    }
+    .card {
+      background: white;
+      padding: 2.5rem 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      text-align: center;
+      max-width: 480px;
+      width: 90%;
+    }
+    h2 { margin-bottom: 1rem; font-size: 1.5rem; }
+    p { color: #6b7280; line-height: 1.6; margin-bottom: 1rem; }
+    code {
+      background: #f3f4f6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.875em;
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">$body</div>
+  ${autoClose ? '<script>try { window.close(); } catch (e) {}</script>' : ''}
+</body>
+</html>''';
+  }
+
   Future<void> _desktopOAuthLogin() async {
     setState(() {
       _desktopOAuthLoading = true;
@@ -159,32 +206,77 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      final authProvider = context.read<AuthProvider>();
+
       final server = await shelf_io.serve(
         (Request request) async {
-          if (request.requestedUri.path == '/callback') {
-            final params = request.requestedUri.queryParameters;
-            if (params.containsKey('error')) {
-              _showError('登录失败: ${params['error']}');
-              return Response.ok(
-                '<html><body><h3>登录失败</h3><p>${params['error']}</p><p>请关闭此页面返回客户端重试。</p></body></html>',
-                headers: {'Content-Type': 'text/html; charset=utf-8'},
-              );
-            }
-            final access = params['access_token'];
-            final refresh = params['refresh_token'];
-            if (access != null && refresh != null) {
-              await AuthService()
-                  .saveTokens(accessToken: access, refreshToken: refresh);
-              if (mounted) {
-                await context.read<AuthProvider>().refreshState();
-              }
-              return Response.ok(
-                '<html><body><h3>登录成功</h3><p>请返回客户端。</p></body></html>',
-                headers: {'Content-Type': 'text/html; charset=utf-8'},
-              );
-            }
+          if (request.requestedUri.path != '/callback') {
+            return Response.notFound('Not Found');
           }
-          return Response.notFound('Not Found');
+
+          final params = request.requestedUri.queryParameters;
+
+          if (params.containsKey('error')) {
+            return Response.ok(
+              _oauthPageHtml(
+                title: '登录失败',
+                body: '''
+                  <h2 style="color: #ef4444;">登录失败</h2>
+                  <p>错误码: <code>${params['error']}</code></p>
+                  <p>请关闭此页面返回客户端重试。</p>
+                ''',
+              ),
+              headers: {'Content-Type': 'text/html; charset=utf-8'},
+            );
+          }
+
+          final access = params['access_token'];
+          final refresh = params['refresh_token'];
+
+          if (access == null || refresh == null) {
+            return Response.ok(
+              _oauthPageHtml(
+                title: '登录失败',
+                body: '''
+                  <h2 style="color: #ef4444;">登录失败</h2>
+                  <p>回调缺少 access_token 或 refresh_token 参数</p>
+                  <p>请关闭此页面返回客户端重试。</p>
+                ''',
+              ),
+              headers: {'Content-Type': 'text/html; charset=utf-8'},
+            );
+          }
+
+          try {
+            await authProvider.apiService.validateToken(access);
+          } catch (e) {
+            return Response.ok(
+              _oauthPageHtml(
+                title: '登录失败',
+                body: '''
+                  <h2 style="color: #ef4444;">登录失败</h2>
+                  <p>Token 验证失败: ${e.toString()}</p>
+                  <p>请关闭此页面返回客户端重试。</p>
+                ''',
+              ),
+              headers: {'Content-Type': 'text/html; charset=utf-8'},
+            );
+          }
+
+          await AuthService().saveTokens(accessToken: access, refreshToken: refresh);
+          await authProvider.refreshState();
+
+          return Response.ok(
+            _oauthPageHtml(
+              title: '登录成功',
+              autoClose: true,
+              body: '''
+                <h2 style="color: #10b981;">登录成功</h2>
+                <p>已获取登录凭证，请返回客户端。</p>
+              ''',
+            ),
+            headers: {'Content-Type': 'text/html; charset=utf-8'},
+          );
         },
         'localhost',
         0,
