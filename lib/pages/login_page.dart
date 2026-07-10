@@ -38,7 +38,8 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  String get _oidcLoginUrl => '${ApiConfig.baseUrl}${ApiConfig.oidcLogin}';
+  String get _oidcLoginUrl =>
+      Uri.parse(ApiConfig.baseUrl).resolve(ApiConfig.oidcLogin).toString();
 
   bool _isCallbackUrl(String url) =>
       url.startsWith(ApiConfig.callbackUrl) &&
