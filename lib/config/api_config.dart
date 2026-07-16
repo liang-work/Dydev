@@ -1,6 +1,67 @@
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ApiConfig {
-  static const String baseUrl = 'https://dev-api.dy.ci/';
-  static const String backendApiBase = '$baseUrl/api';
+  static const String _bootstrapBaseUrl = 'https://dev-api.dy.ci/';
+  static const String _clientConfigPath = '/api/config/client/pull/';
+  static const String _clientConfigToken = '4bcc1ebf038741a9faed516567211c0f';
+  static const String _serverUrlCacheKey = 'server_url';
+
+  static String baseUrl = _bootstrapBaseUrl;
+  static String get backendApiBase => '${baseUrl}api';
+
+  static Future<void> initialize() async {
+    final preferences = await SharedPreferences.getInstance();
+    final cachedUrl = preferences.getString(_serverUrlCacheKey);
+    final normalizedCachedUrl = _normalizeServerUrl(cachedUrl);
+    if (normalizedCachedUrl != null) {
+      baseUrl = normalizedCachedUrl;
+    }
+
+    if (_clientConfigToken.isEmpty) return;
+
+    try {
+      final response = await Dio(
+        BaseOptions(
+          baseUrl: _bootstrapBaseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      ).get(_clientConfigPath, queryParameters: {'token': _clientConfigToken});
+      final data = response.data;
+      final serverUrl = data is Map ? data['server_url'] as String? : null;
+      final normalizedServerUrl = _normalizeServerUrl(serverUrl);
+      if (normalizedServerUrl == null) return;
+
+      baseUrl = normalizedServerUrl;
+      await preferences.setString(_serverUrlCacheKey, normalizedServerUrl);
+    } catch (_) {}
+  }
+
+  static String? _normalizeServerUrl(String? value) {
+    final trimmedValue = value?.trim();
+    if (trimmedValue == null || trimmedValue.isEmpty) return null;
+
+    final candidate = trimmedValue.contains('://')
+        ? trimmedValue
+        : 'https://$trimmedValue';
+    final uri = Uri.tryParse(candidate);
+    if (uri == null ||
+        !uri.hasAuthority ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment) {
+      return null;
+    }
+
+    final isLocalhost =
+        uri.host == 'localhost' || uri.host == '127.0.0.1' || uri.host == '::1';
+    if (uri.scheme != 'https' && !isLocalhost) return null;
+
+    final normalizedPath = uri.path.replaceAll(RegExp(r'/+$'), '');
+    return uri.replace(path: '$normalizedPath/').toString();
+  }
 
   // Must match server's OIDC_REDIRECT_AFTER_AUTH.
   static const String callbackUrl = 'https://developer.dy.ci/callback';
